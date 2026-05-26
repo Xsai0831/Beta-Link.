@@ -101,6 +101,16 @@
           placeholder="どんなアプリか、何をテストしてほしいか、対象ユーザーなどを簡潔に書いてください。"></textarea>
       </div>
 
+      <!-- 作品URL -->
+      <div>
+        <label class="block text-sm font-medium mb-2" for="inputUrl">
+          作品URL <span class="text-zinc-500 font-normal text-xs">（任意）</span>
+        </label>
+        <input id="inputUrl" type="url" class="field"
+          placeholder="例：https://apps.apple.com/... または https://yourapp.com" />
+        <p class="text-xs text-zinc-600 mt-1.5">テスターがここからアプリ・サイトにアクセスします。</p>
+      </div>
+
       <!-- キーワード -->
       <div>
         <label class="block text-sm font-medium mb-2" for="inputKeywords">
@@ -307,6 +317,7 @@ function hideAlert() { document.getElementById('alert').classList.add('hidden');
     document.getElementById('submitLabel').textContent = '更新する';
     document.getElementById('inputTitle').value    = proj.title;
     document.getElementById('inputDesc').value     = proj.description || '';
+    document.getElementById('inputUrl').value      = proj.url || '';
     document.getElementById('inputKeywords').value = proj.keywords || '';
     document.getElementById('inputCount').value    = proj.target_count;
 
@@ -368,7 +379,8 @@ function hideAlert() { document.getElementById('alert').classList.add('hidden');
       const desc     = document.getElementById('inputDesc').value.trim();
       const keywords = document.getElementById('inputKeywords').value.trim();
 
-      const { error } = await sb.from('projects').update({ title, description: desc, keywords, tags, type, status, target_count: count }).eq('id', editId);
+      const url = document.getElementById('inputUrl').value.trim();
+      const { error } = await sb.from('projects').update({ title, description: desc, url, keywords, tags, type, status, target_count: count }).eq('id', editId);
       btn.disabled = false;
       btn.querySelector('span').textContent = '更新する';
 
@@ -395,10 +407,12 @@ function hideAlert() { document.getElementById('alert').classList.add('hidden');
       const desc     = document.getElementById('inputDesc').value.trim();
       const keywords = document.getElementById('inputKeywords').value.trim();
 
+      const url = document.getElementById('inputUrl').value.trim();
       const { error } = await sb.from('projects').insert({
         user_id:      session.user.id,
         title,
         description:  desc,
+        url,
         keywords,
         tags,
         type,

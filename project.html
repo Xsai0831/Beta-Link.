@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>プロジェクト詳細 — BetaLink</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="supabase-config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: { extend: {
+      fontFamily: { sans: ['Inter','Noto Sans JP','system-ui','sans-serif'] },
+      colors: { ink: { 900:'#0A0A0A', 800:'#0F0F10', 700:'#161618' } }
+    }}
+  }
+</script>
+<style>
+  html { scroll-behavior:smooth; }
+  body { font-family:'Inter','Noto Sans JP',system-ui,sans-serif; background:#0A0A0A; color:#E4E4E7; -webkit-font-smoothing:antialiased; }
+  .grad-text { background:linear-gradient(135deg,#00D4FF 0%,#A855F7 100%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .grad-bg   { background:linear-gradient(135deg,#00D4FF 0%,#A855F7 100%); }
+  .glass { background:rgba(15,15,16,.6); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+  .glow  { box-shadow:0 0 40px -10px rgba(0,212,255,.4),0 0 80px -20px rgba(168,85,247,.3); }
+  .grad-border::before {
+    content:''; position:absolute; inset:0; border-radius:inherit; padding:1px;
+    background:linear-gradient(135deg,rgba(0,212,255,.4),rgba(168,85,247,.4));
+    -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none;
+  }
+  .tag-ios     { background:rgba(0,212,255,.08); color:#67e8f9; border:1px solid rgba(0,212,255,.2); }
+  .tag-android { background:rgba(52,211,153,.08); color:#6ee7b7; border:1px solid rgba(52,211,153,.2); }
+  .tag-web     { background:rgba(168,85,247,.08); color:#c084fc; border:1px solid rgba(168,85,247,.2); }
+  .tag-ai      { background:rgba(251,146,60,.08);  color:#fca86e; border:1px solid rgba(251,146,60,.2); }
+  .tag-saas    { background:rgba(250,204,21,.08);  color:#facc15; border:1px solid rgba(250,204,21,.2); }
+  #bottomNav { padding-bottom:env(safe-area-inset-bottom,0px); }
+</style>
+</head>
+<body class="min-h-screen pb-24">
+
+<!-- Ambient -->
+<div class="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+  <div class="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-cyan-500/8 blur-[120px]"></div>
+  <div class="absolute -bottom-40 -right-40 w-[400px] h-[400px] rounded-full bg-purple-500/8 blur-[120px]"></div>
+</div>
+
+<!-- Navbar -->
+<header class="fixed top-0 inset-x-0 z-50 glass border-b border-white/5">
+  <nav class="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-3">
+    <a href="board.html" class="flex items-center gap-2 text-zinc-400 hover:text-white transition text-sm">
+      <i data-lucide="arrow-left" class="w-4 h-4" aria-hidden="true"></i>
+      <span class="hidden sm:inline">掲示板に戻る</span>
+    </a>
+    <div class="flex-1"></div>
+    <a href="BetaLink.html" class="flex items-center gap-2">
+      <div class="w-7 h-7 rounded-lg grad-bg flex items-center justify-center">
+        <svg viewBox="0 0 32 32" class="w-7 h-7" aria-hidden="true">
+          <text x="16" y="23" text-anchor="middle" font-family="Inter,system-ui" font-weight="800" font-size="20" fill="#0A0A0A">β</text>
+        </svg>
+      </div>
+      <span class="font-bold tracking-tight hidden sm:inline">BetaLink</span>
+    </a>
+  </nav>
+</header>
+
+<!-- Main -->
+<main class="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 pt-24 pb-12">
+
+  <!-- Loading -->
+  <div id="loadingEl" class="py-24 text-center text-zinc-500 text-sm">
+    <div class="w-6 h-6 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin mx-auto mb-3"></div>
+    読み込み中...
+  </div>
+
+  <!-- Not found -->
+  <div id="notFoundEl" class="hidden py-24 text-center">
+    <p class="text-zinc-400 mb-4">プロジェクトが見つかりません</p>
+    <a href="board.html" class="text-sm grad-text font-medium">掲示板に戻る →</a>
+  </div>
+
+  <!-- Content -->
+  <div id="contentEl" class="hidden space-y-6">
+
+    <!-- Header card -->
+    <div class="relative grad-border rounded-2xl">
+      <div class="rounded-2xl bg-ink-800 p-6 sm:p-8">
+
+        <!-- Tags + badges -->
+        <div id="tagsEl" class="flex items-center gap-1.5 flex-wrap mb-4"></div>
+
+        <h1 id="titleEl" class="text-2xl sm:text-3xl font-bold mb-3"></h1>
+        <p id="descEl" class="text-zinc-400 text-sm leading-relaxed mb-6"></p>
+
+        <!-- Keywords -->
+        <div id="kwWrap" class="hidden flex items-center gap-1.5 flex-wrap mb-6">
+          <span class="text-xs text-zinc-600">キーワード:</span>
+          <div id="kwEl" class="flex gap-1.5 flex-wrap"></div>
+        </div>
+
+        <!-- Stats -->
+        <div class="flex items-center gap-6 text-sm text-zinc-500 mb-6 pb-6 border-b border-white/5">
+          <span class="flex items-center gap-1.5">
+            <i data-lucide="users" class="w-4 h-4" aria-hidden="true"></i>
+            <span id="countEl">0/20 人参加</span>
+          </span>
+          <span class="flex items-center gap-1.5">
+            <i data-lucide="clock" class="w-4 h-4" aria-hidden="true"></i>
+            <span id="timeEl"></span>
+          </span>
+        </div>
+
+        <!-- Action area -->
+        <div id="actionEl"></div>
+
+      </div>
+    </div>
+
+    <!-- How to participate -->
+    <div class="rounded-2xl bg-ink-800 border border-white/5 p-6">
+      <h2 class="font-semibold text-sm mb-3 text-zinc-300">参加の流れ</h2>
+      <ol class="space-y-2 text-sm text-zinc-500">
+        <li class="flex items-start gap-2"><span class="text-cyan-400 font-bold flex-shrink-0">1.</span>「テストに参加する」を押す</li>
+        <li class="flex items-start gap-2"><span class="text-cyan-400 font-bold flex-shrink-0">2.</span>作品リンクが開くので実際に使ってみる</li>
+        <li class="flex items-start gap-2"><span class="text-cyan-400 font-bold flex-shrink-0">3.</span>フィードバックを開発者に伝える（SNS・メール等）</li>
+      </ol>
+    </div>
+
+  </div>
+</main>
+
+<!-- Bottom Nav -->
+<nav id="bottomNav" class="fixed bottom-0 inset-x-0 z-50 glass border-t border-white/10">
+  <div class="flex items-stretch h-16">
+    <a href="BetaLink.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="home" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">ホーム</span>
+    </a>
+    <a href="board.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-cyan-400 pt-1">
+      <i data-lucide="layout-list" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">掲示板</span>
+    </a>
+    <div class="flex-1 flex items-center justify-center -mt-4">
+      <a href="post.html" aria-label="投稿する" class="w-14 h-14 rounded-2xl grad-bg text-black flex items-center justify-center shadow-lg glow">
+        <i data-lucide="plus" class="w-6 h-6" aria-hidden="true"></i>
+      </a>
+    </div>
+    <a href="login.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="bell" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">通知</span>
+    </a>
+    <a href="mypage.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="user" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">マイページ</span>
+    </a>
+  </div>
+</nav>
+
+<script src="auth.js"></script>
+<script>
+lucide.createIcons();
+
+const TAG_COLORS = {
+  iOS:'tag-ios', Android:'tag-android', Web:'tag-web',
+  AI:'tag-ai', SaaS:'tag-saas', ゲーム:'tag-saas', デザイン:'tag-saas', その他:'tag-saas'
+};
+
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr);
+  const m = Math.floor(diff / 60000);
+  const h = Math.floor(diff / 3600000);
+  const d = Math.floor(diff / 86400000);
+  if (m < 1)  return 'たった今';
+  if (m < 60) return `${m}分前`;
+  if (h < 24) return `${h}時間前`;
+  if (d === 1) return '昨日';
+  return `${d}日前`;
+}
+
+(async function () {
+  const id = new URLSearchParams(window.location.search).get('id');
+  if (!id) { show('notFoundEl'); return; }
+
+  const session = await auth.getSession();
+  const myId = session?.user?.id;
+
+  const { data: p, error } = await sb.from('projects').select('*').eq('id', id).single();
+  if (error || !p) { show('notFoundEl'); return; }
+
+  document.title = `${p.title} — BetaLink`;
+
+  // Tags + admin badge
+  const tagsEl = document.getElementById('tagsEl');
+  (p.tags || []).forEach(t => {
+    const span = document.createElement('span');
+    span.className = `text-[11px] px-2 py-0.5 rounded font-mono ${TAG_COLORS[t] || 'tag-saas'}`;
+    span.textContent = t;
+    tagsEl.appendChild(span);
+  });
+  if (p.user_id === ADMIN_ID) {
+    const badge = document.createElement('span');
+    badge.className = 'text-[11px] px-2 py-0.5 rounded border border-yellow-400/50 text-yellow-300 bg-yellow-400/10 font-semibold';
+    badge.textContent = '管理者';
+    tagsEl.appendChild(badge);
+  }
+
+  document.getElementById('titleEl').textContent = p.title;
+  document.getElementById('descEl').textContent = p.description || '説明なし';
+  document.getElementById('countEl').textContent = `${p.current_count}/${p.target_count} 人参加`;
+  document.getElementById('timeEl').textContent = timeAgo(p.created_at);
+
+  // Keywords
+  if (p.keywords) {
+    const kws = p.keywords.split(/[,、\s]+/).filter(Boolean);
+    if (kws.length) {
+      document.getElementById('kwWrap').classList.remove('hidden');
+      document.getElementById('kwEl').innerHTML = kws.map(k =>
+        `<span class="text-[11px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-500">${esc(k)}</span>`
+      ).join('');
+    }
+  }
+
+  // Action area
+  const actionEl = document.getElementById('actionEl');
+  const isOwn = myId && p.user_id === myId;
+  const isClosed = p.status === 'closed';
+
+  if (isClosed) {
+    actionEl.innerHTML = `
+      <div class="flex items-center gap-2 text-zinc-500 text-sm">
+        <i data-lucide="lock" class="w-4 h-4"></i>
+        この募集はクローズしました
+      </div>`;
+  } else if (isOwn) {
+    actionEl.innerHTML = `
+      <div class="flex items-center gap-3 flex-wrap">
+        <span class="text-sm text-zinc-500">自分のプロジェクトです</span>
+        <a href="post.html?id=${esc(p.id)}" class="text-sm border border-white/10 hover:border-white/20 px-4 py-2 rounded-xl text-zinc-300 hover:text-white transition">編集する</a>
+      </div>`;
+  } else if (!session) {
+    actionEl.innerHTML = `
+      <div class="space-y-3">
+        <p class="text-sm text-zinc-500">テストに参加するにはログインが必要です。</p>
+        <a href="login.html" class="inline-flex items-center gap-2 grad-bg text-black font-bold px-6 py-3 rounded-xl hover:opacity-90 transition glow text-sm">
+          <i data-lucide="github" class="w-4 h-4"></i>
+          ログインして参加する
+        </a>
+      </div>`;
+  } else {
+    // ログイン済み・他人のプロジェクト
+    const { data: hist } = await sb.from('test_history')
+      .select('id').eq('tester_id', myId).eq('project_id', p.id).maybeSingle();
+    const alreadyJoined = !!hist;
+
+    if (alreadyJoined) {
+      actionEl.innerHTML = `
+        <div class="flex items-center gap-2 text-emerald-400 text-sm font-medium">
+          <i data-lucide="check-circle" class="w-5 h-5"></i>
+          参加済みです
+        </div>
+        ${p.url ? `<a href="${esc(p.url)}" target="_blank" rel="noopener" class="mt-3 inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition border border-white/10 hover:border-white/20 px-4 py-2 rounded-xl">
+          <i data-lucide="external-link" class="w-4 h-4"></i>作品を開く
+        </a>` : ''}`;
+    } else {
+      actionEl.innerHTML = `
+        <div class="space-y-3">
+          ${p.url ? '' : '<p class="text-xs text-zinc-600">※ 作品リンクが未登録のため、開発者に直接連絡してください。</p>'}
+          <button id="joinBtn" class="inline-flex items-center gap-2 grad-bg text-black font-bold px-6 py-3.5 rounded-xl hover:opacity-90 transition glow text-sm">
+            <i data-lucide="rocket" class="w-4 h-4"></i>
+            テストに参加する
+          </button>
+        </div>`;
+
+      document.getElementById('joinBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('joinBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="opacity-60">処理中...</span>';
+
+        const { data, error } = await sb.rpc('join_project', { proj_id: p.id });
+
+        if (error || data?.error) {
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="rocket" class="w-4 h-4"></i> テストに参加する';
+          lucide.createIcons();
+          alert(error?.message || 'エラーが発生しました');
+          return;
+        }
+
+        actionEl.innerHTML = `
+          <div class="space-y-3">
+            <div class="flex items-center gap-2 text-emerald-400 text-sm font-semibold">
+              <i data-lucide="check-circle" class="w-5 h-5"></i>
+              参加しました！ +2クレジット獲得
+            </div>
+            ${p.url ? `<a href="${esc(p.url)}" target="_blank" rel="noopener"
+              class="inline-flex items-center gap-2 grad-bg text-black font-bold px-6 py-3.5 rounded-xl hover:opacity-90 transition glow text-sm">
+              <i data-lucide="external-link" class="w-4 h-4"></i>作品を開く
+            </a>` : '<p class="text-sm text-zinc-500">開発者に直接連絡してテストしてみてください。</p>'}
+          </div>`;
+        document.getElementById('countEl').textContent = `${p.current_count + 1}/${p.target_count} 人参加`;
+        lucide.createIcons();
+      });
+    }
+  }
+
+  lucide.createIcons();
+  show('contentEl');
+})();
+
+function show(id) {
+  document.getElementById('loadingEl').classList.add('hidden');
+  document.getElementById(id).classList.remove('hidden');
+}
+</script>
+</body>
+</html>
