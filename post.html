@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>プロジェクトを投稿 — BetaLink</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="supabase-config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter','Noto Sans JP','system-ui','sans-serif'] },
+        colors: {
+          ink: { 900:'#0A0A0A', 800:'#0F0F10', 700:'#161618', 600:'#1C1C1F', 500:'#26262B', 400:'#3A3A42' }
+        }
+      }
+    }
+  }
+</script>
+<style>
+  html { scroll-behavior:smooth; }
+  body { font-family:'Inter','Noto Sans JP',system-ui,sans-serif; background:#0A0A0A; color:#E4E4E7; -webkit-font-smoothing:antialiased; }
+  .grad-text { background:linear-gradient(135deg,#00D4FF 0%,#A855F7 100%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .grad-bg   { background:linear-gradient(135deg,#00D4FF 0%,#A855F7 100%); }
+  .glass { background:rgba(15,15,16,.6); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+  .glow  { box-shadow:0 0 40px -10px rgba(0,212,255,.4),0 0 80px -20px rgba(168,85,247,.3); }
+  .field { width:100%; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:.75rem; padding:.75rem 1rem; color:#E4E4E7; font-size:.875rem; outline:none; transition:border-color .15s; }
+  .field:focus { border-color:rgba(0,212,255,.5); }
+  .field::placeholder { color:#52525b; }
+  .tag-btn { display:flex; align-items:center; gap:.375rem; padding:.375rem .75rem; border-radius:.5rem; border:1px solid rgba(255,255,255,.1); font-size:.75rem; font-weight:500; color:#a1a1aa; cursor:pointer; transition:all .15s; }
+  .tag-btn.active { border-color:rgba(0,212,255,.5); color:#00D4FF; background:rgba(0,212,255,.08); }
+  #bottomNav { padding-bottom:env(safe-area-inset-bottom,0px); }
+</style>
+</head>
+<body class="bg-ink-900 text-zinc-200 antialiased overflow-x-hidden pb-16">
+
+<!-- Ambient -->
+<div class="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+  <div class="absolute -top-40 -left-40 w-[400px] h-[400px] rounded-full bg-cyan-500/6 blur-[120px]"></div>
+</div>
+
+<!-- Navbar -->
+<header class="fixed top-0 inset-x-0 z-50 glass border-b border-white/5">
+  <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-3">
+    <a href="BetaLink.html" class="flex items-center gap-2 flex-shrink-0">
+      <div class="w-7 h-7 rounded-lg grad-bg flex items-center justify-center">
+        <svg viewBox="0 0 32 32" class="w-7 h-7" aria-hidden="true">
+          <text x="16" y="23" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="800" font-size="20" fill="#0A0A0A">β</text>
+        </svg>
+      </div>
+      <span class="font-bold text-lg tracking-tight hidden sm:inline">BetaLink</span>
+    </a>
+    <div class="flex-1"></div>
+    <div class="hidden md:flex items-center gap-6 text-sm text-zinc-400">
+      <a href="BetaLink.html" class="hover:text-white transition">ホーム</a>
+      <a href="board.html" class="hover:text-white transition">掲示板</a>
+      <a href="post.html" class="text-white font-medium">投稿する</a>
+      <a href="mypage.html" class="hover:text-white transition">マイページ</a>
+    </div>
+  </nav>
+</header>
+
+<!-- Loading overlay -->
+<div id="loadingOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-ink-900">
+  <div class="text-zinc-500 text-sm animate-pulse">読み込み中…</div>
+</div>
+
+<!-- Main -->
+<main class="relative z-10 max-w-2xl mx-auto px-4 sm:px-6 pt-28 pb-12">
+
+  <div id="formWrap" class="hidden">
+    <div class="mb-8">
+      <h1 id="pageTitle" class="text-2xl font-bold mb-1">プロジェクトを投稿</h1>
+      <p class="text-sm text-zinc-500">β テスターを集めたいプロジェクトの情報を入力してください。</p>
+    </div>
+
+    <!-- Alert -->
+    <div id="alert" class="hidden mb-5 p-4 rounded-xl text-sm"></div>
+
+    <form id="postForm" class="space-y-6" novalidate>
+
+      <!-- タイトル -->
+      <div>
+        <label class="block text-sm font-medium mb-2" for="inputTitle">
+          プロジェクト名 <span class="text-red-400">*</span>
+        </label>
+        <input id="inputTitle" type="text" class="field" placeholder="例：Taskly — AI タスク管理アプリ" maxlength="80" required />
+      </div>
+
+      <!-- 説明 -->
+      <div>
+        <label class="block text-sm font-medium mb-2" for="inputDesc">説明</label>
+        <textarea id="inputDesc" class="field resize-none" rows="4"
+          placeholder="どんなアプリか、何をテストしてほしいか、対象ユーザーなどを簡潔に書いてください。"></textarea>
+      </div>
+
+      <!-- キーワード -->
+      <div>
+        <label class="block text-sm font-medium mb-2" for="inputKeywords">
+          キーワード <span class="text-zinc-500 font-normal text-xs">（任意・カンマ区切り）</span>
+        </label>
+        <input id="inputKeywords" type="text" class="field"
+          placeholder="例：習慣化, タスク管理, ミニマル, 通知" />
+        <p class="text-xs text-zinc-600 mt-1.5">掲示板の検索で使われます。プロジェクトの特徴を自由に書いてください。</p>
+      </div>
+
+      <!-- タグ -->
+      <div>
+        <label class="block text-sm font-medium mb-3">タグ（複数選択可）</label>
+        <div class="flex flex-wrap gap-2" id="tagGroup">
+          <button type="button" class="tag-btn" data-tag="iOS">iOS</button>
+          <button type="button" class="tag-btn" data-tag="Android">Android</button>
+          <button type="button" class="tag-btn" data-tag="Web">Web</button>
+          <button type="button" class="tag-btn" data-tag="AI">AI</button>
+          <button type="button" class="tag-btn" data-tag="SaaS">SaaS</button>
+          <button type="button" class="tag-btn" data-tag="ゲーム">ゲーム</button>
+          <button type="button" class="tag-btn" data-tag="デザイン">デザイン</button>
+          <button type="button" class="tag-btn" data-tag="その他">その他</button>
+        </div>
+      </div>
+
+      <!-- 募集タイプ -->
+      <div>
+        <label class="block text-sm font-medium mb-3">募集タイプ</label>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <label class="type-option relative flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition border-cyan-500/50 bg-cyan-500/5" data-value="open">
+            <input type="radio" name="type" value="open" class="sr-only" checked />
+            <div class="w-4 h-4 rounded-full border-2 mt-0.5 flex-shrink-0 flex items-center justify-center type-radio border-cyan-400">
+              <div class="w-2 h-2 rounded-full bg-cyan-400 type-dot"></div>
+            </div>
+            <div>
+              <div class="font-semibold text-sm">オープン募集</div>
+              <div class="text-xs text-zinc-500 mt-0.5 leading-relaxed">誰でも参加できる公開枠。手軽に多くのテスターを集めたいときに。</div>
+            </div>
+          </label>
+          <label class="type-option relative flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition border-white/10 bg-transparent" data-value="matching">
+            <input type="radio" name="type" value="matching" class="sr-only" />
+            <div class="w-4 h-4 rounded-full border-2 mt-0.5 flex-shrink-0 type-radio border-zinc-600">
+              <div class="w-2 h-2 rounded-full hidden type-dot"></div>
+            </div>
+            <div>
+              <div class="font-semibold text-sm">マッチング</div>
+              <div class="text-xs text-zinc-500 mt-0.5 leading-relaxed">条件に合う相手とマッチングして、深いフィードバックを得る。</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- 目標人数 -->
+      <div>
+        <label class="block text-sm font-medium mb-2" for="inputCount">
+          目標テスター数
+        </label>
+        <div class="flex items-center gap-3">
+          <input id="inputCount" type="number" class="field w-32" min="1" max="500" value="20" />
+          <span class="text-sm text-zinc-500">人</span>
+        </div>
+      </div>
+
+      <!-- ステータス（編集時のみ表示） -->
+      <div id="statusWrap" class="hidden">
+        <label class="block text-sm font-medium mb-3">ステータス</label>
+        <div class="flex gap-3">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="status" value="active" checked class="accent-cyan-400" />
+            <span class="text-sm">募集中</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="status" value="closed" class="accent-zinc-500" />
+            <span class="text-sm text-zinc-400">クローズ</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-3 pt-2">
+        <button type="submit" id="submitBtn"
+          class="flex-1 grad-bg text-black font-bold py-3 px-6 rounded-xl hover:opacity-90 transition glow flex items-center justify-center gap-2">
+          <i data-lucide="send" class="w-4 h-4" aria-hidden="true"></i>
+          <span id="submitLabel">投稿する</span>
+        </button>
+        <a href="mypage.html"
+          class="py-3 px-5 rounded-xl border border-white/10 hover:border-white/20 text-sm text-zinc-400 hover:text-white transition">
+          キャンセル
+        </a>
+      </div>
+
+      <!-- 削除ボタン（編集時のみ） -->
+      <div id="deleteWrap" class="hidden pt-2 border-t border-white/5">
+        <button type="button" id="deleteBtn"
+          class="w-full py-3 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-500/10 text-sm transition">
+          このプロジェクトを削除する
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+</main>
+
+<!-- Bottom Nav -->
+<nav id="bottomNav" aria-label="ボトムナビゲーション"
+     class="fixed bottom-0 inset-x-0 z-50 glass border-t border-white/10">
+  <div class="flex items-stretch h-16">
+    <a href="BetaLink.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="home" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">ホーム</span>
+    </a>
+    <a href="board.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="layout-list" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">掲示板</span>
+    </a>
+    <div class="flex-1 flex items-center justify-center -mt-4">
+      <a href="post.html" aria-label="プロジェクトを投稿する"
+         class="w-14 h-14 rounded-2xl grad-bg text-black flex items-center justify-center shadow-lg glow">
+        <i data-lucide="plus" class="w-6 h-6" aria-hidden="true"></i>
+      </a>
+    </div>
+    <a href="login.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="bell" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">通知</span>
+    </a>
+    <a href="mypage.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="user" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">マイページ</span>
+    </a>
+  </div>
+</nav>
+
+<script src="auth.js"></script>
+<script>
+lucide.createIcons();
+
+// ---- タグ選択 ----
+const tagGroup = document.getElementById('tagGroup');
+tagGroup.querySelectorAll('.tag-btn').forEach(btn => {
+  btn.addEventListener('click', () => btn.classList.toggle('active'));
+});
+
+// ---- 募集タイプ選択 ----
+document.querySelectorAll('.type-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('.type-option').forEach(o => {
+      const isThis = o === opt;
+      o.classList.toggle('border-cyan-500/50', isThis);
+      o.classList.toggle('bg-cyan-500/5', isThis);
+      o.classList.toggle('border-white/10', !isThis);
+      const dot = o.querySelector('.type-dot');
+      const radio = o.querySelector('.type-radio');
+      if (isThis) {
+        dot?.classList.remove('hidden');
+        radio?.classList.add('border-cyan-400');
+        radio?.classList.remove('border-zinc-600');
+      } else {
+        dot?.classList.add('hidden');
+        radio?.classList.remove('border-cyan-400');
+        radio?.classList.add('border-zinc-600');
+      }
+    });
+    opt.querySelector('input[type=radio]').checked = true;
+  });
+});
+
+// ---- アラート ----
+function showAlert(msg, type = 'error') {
+  const el = document.getElementById('alert');
+  el.className = `mb-5 p-4 rounded-xl text-sm ${type === 'error' ? 'bg-red-500/10 border border-red-500/20 text-red-300' : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300'}`;
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function hideAlert() { document.getElementById('alert').classList.add('hidden'); }
+
+// ---- 初期化 ----
+(async function init() {
+  const session = await auth.getSession();
+  if (!session) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  const urlParams  = new URLSearchParams(window.location.search);
+  const editId     = urlParams.get('id');
+  const overlay    = document.getElementById('loadingOverlay');
+  const formWrap   = document.getElementById('formWrap');
+
+  if (editId) {
+    // 編集モード
+    const { data: proj, error } = await sb.from('projects').select('*').eq('id', editId).single();
+    if (error || !proj) {
+      overlay.innerHTML = '<div class="text-red-400 text-sm">プロジェクトが見つかりません</div>';
+      return;
+    }
+    if (proj.user_id !== session.user.id) {
+      overlay.innerHTML = '<div class="text-red-400 text-sm">このプロジェクトを編集する権限がありません</div>';
+      return;
+    }
+
+    document.getElementById('pageTitle').textContent = 'プロジェクトを編集';
+    document.getElementById('submitLabel').textContent = '更新する';
+    document.getElementById('inputTitle').value    = proj.title;
+    document.getElementById('inputDesc').value     = proj.description || '';
+    document.getElementById('inputKeywords').value = proj.keywords || '';
+    document.getElementById('inputCount').value    = proj.target_count;
+
+    // タグ
+    (proj.tags || []).forEach(tag => {
+      tagGroup.querySelectorAll('.tag-btn').forEach(btn => {
+        if (btn.dataset.tag === tag) btn.classList.add('active');
+      });
+    });
+
+    // タイプ
+    document.querySelectorAll('.type-option').forEach(opt => {
+      const match = opt.dataset.value === proj.type;
+      opt.classList.toggle('border-cyan-500/50', match);
+      opt.classList.toggle('bg-cyan-500/5', match);
+      opt.classList.toggle('border-white/10', !match);
+      const dot   = opt.querySelector('.type-dot');
+      const radio = opt.querySelector('.type-radio');
+      if (match) {
+        dot?.classList.remove('hidden');
+        radio?.classList.add('border-cyan-400');
+        radio?.classList.remove('border-zinc-600');
+        opt.querySelector('input[type=radio]').checked = true;
+      } else {
+        dot?.classList.add('hidden');
+        radio?.classList.remove('border-cyan-400');
+        radio?.classList.add('border-zinc-600');
+      }
+    });
+
+    // ステータス
+    document.getElementById('statusWrap').classList.remove('hidden');
+    document.querySelector(`input[name=status][value="${proj.status}"]`).checked = true;
+
+    // 削除ボタン
+    document.getElementById('deleteWrap').classList.remove('hidden');
+    document.getElementById('deleteBtn').addEventListener('click', async () => {
+      if (!confirm('このプロジェクトを削除しますか？')) return;
+      const { error } = await sb.from('projects').delete().eq('id', editId);
+      if (error) { showAlert('削除できませんでした: ' + error.message); return; }
+      window.location.href = 'mypage.html';
+    });
+
+    // フォーム送信（更新）
+    document.getElementById('postForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideAlert();
+      const title = document.getElementById('inputTitle').value.trim();
+      if (!title) { showAlert('プロジェクト名を入力してください'); return; }
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.querySelector('span').textContent = '更新中…';
+
+      const tags     = [...tagGroup.querySelectorAll('.tag-btn.active')].map(b => b.dataset.tag);
+      const type     = document.querySelector('input[name=type]:checked')?.value || 'open';
+      const status   = document.querySelector('input[name=status]:checked')?.value || 'active';
+      const count    = parseInt(document.getElementById('inputCount').value) || 20;
+      const desc     = document.getElementById('inputDesc').value.trim();
+      const keywords = document.getElementById('inputKeywords').value.trim();
+
+      const { error } = await sb.from('projects').update({ title, description: desc, keywords, tags, type, status, target_count: count }).eq('id', editId);
+      btn.disabled = false;
+      btn.querySelector('span').textContent = '更新する';
+
+      if (error) { showAlert('更新できませんでした: ' + error.message); return; }
+      showAlert('更新しました', 'success');
+      setTimeout(() => window.location.href = 'mypage.html', 1200);
+    });
+
+  } else {
+    // 新規投稿モード
+    document.getElementById('postForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideAlert();
+      const title = document.getElementById('inputTitle').value.trim();
+      if (!title) { showAlert('プロジェクト名を入力してください'); return; }
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.querySelector('span').textContent = '投稿中…';
+
+      const tags     = [...tagGroup.querySelectorAll('.tag-btn.active')].map(b => b.dataset.tag);
+      const type     = document.querySelector('input[name=type]:checked')?.value || 'open';
+      const count    = parseInt(document.getElementById('inputCount').value) || 20;
+      const desc     = document.getElementById('inputDesc').value.trim();
+      const keywords = document.getElementById('inputKeywords').value.trim();
+
+      const { error } = await sb.from('projects').insert({
+        user_id:      session.user.id,
+        title,
+        description:  desc,
+        keywords,
+        tags,
+        type,
+        target_count: count,
+      });
+      btn.disabled = false;
+      btn.querySelector('span').textContent = '投稿する';
+
+      if (error) { showAlert('投稿できませんでした: ' + error.message); return; }
+      showAlert('投稿しました！', 'success');
+      setTimeout(() => window.location.href = 'mypage.html', 1200);
+    });
+  }
+
+  overlay.classList.add('hidden');
+  formWrap.classList.remove('hidden');
+})();
+</script>
+</body>
+</html>

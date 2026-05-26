@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>マイページ — BetaLink</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="supabase-config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter','Noto Sans JP','system-ui','sans-serif'],
+          mono: ['JetBrains Mono','monospace']
+        },
+        colors: {
+          ink: { 900:'#0A0A0A', 800:'#0F0F10', 700:'#161618', 600:'#1C1C1F', 500:'#26262B', 400:'#3A3A42' }
+        }
+      }
+    }
+  }
+</script>
+<style>
+  html { scroll-behavior:smooth; }
+  body { font-family:'Inter','Noto Sans JP',system-ui,sans-serif; background:#0A0A0A; color:#E4E4E7; -webkit-font-smoothing:antialiased; }
+  .grad-text { background:linear-gradient(135deg,#00D4FF 0%,#A855F7 100%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .grad-bg   { background:linear-gradient(135deg,#00D4FF 0%,#A855F7 100%); }
+  .grad-border { position:relative; }
+  .grad-border::before {
+    content:''; position:absolute; inset:0; border-radius:inherit; padding:1px;
+    background:linear-gradient(135deg,rgba(0,212,255,.5),rgba(168,85,247,.5));
+    -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none;
+  }
+  .glass { background:rgba(15,15,16,.6); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+  .glow  { box-shadow:0 0 40px -10px rgba(0,212,255,.4),0 0 80px -20px rgba(168,85,247,.3); }
+  #bottomNav { padding-bottom:env(safe-area-inset-bottom,0px); }
+</style>
+</head>
+<body class="bg-ink-900 text-zinc-200 antialiased overflow-x-hidden pb-16">
+
+<!-- Ambient -->
+<div class="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+  <div class="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-purple-500/8 blur-[120px]"></div>
+</div>
+
+<!-- Navbar -->
+<header class="fixed top-0 inset-x-0 z-50 glass border-b border-white/5">
+  <nav aria-label="メインナビゲーション" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-3">
+    <a href="BetaLink.html" class="flex items-center gap-2 flex-shrink-0">
+      <div class="w-8 h-8 rounded-lg grad-bg flex items-center justify-center">
+        <svg viewBox="0 0 32 32" class="w-8 h-8" aria-hidden="true">
+          <text x="16" y="23" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="800" font-size="20" fill="#0A0A0A">β</text>
+        </svg>
+      </div>
+      <span class="font-bold text-lg tracking-tight hidden sm:inline">BetaLink</span>
+    </a>
+    <div class="flex-1"></div>
+    <div class="hidden md:flex items-center gap-6 text-sm text-zinc-400">
+      <a href="BetaLink.html" class="hover:text-white transition">ホーム</a>
+      <a href="board.html" class="hover:text-white transition">掲示板</a>
+      <a href="post.html" class="hover:text-white transition">投稿する</a>
+      <a href="mypage.html" class="text-white font-medium">マイページ</a>
+    </div>
+    <div class="flex items-center gap-2">
+      <a id="navLoginBtn" href="login.html" class="grad-bg text-black font-semibold text-sm px-3 sm:px-4 py-2 rounded-lg hover:opacity-90 transition flex items-center gap-1.5 glow">
+        ログイン
+      </a>
+      <a id="navHomeBtn" href="BetaLink.html" class="hidden items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 transition">
+        <i data-lucide="home" class="w-4 h-4" aria-hidden="true"></i>
+        ホーム
+      </a>
+    </div>
+  </nav>
+</header>
+
+<!-- Main -->
+<main class="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 pt-28 pb-12">
+
+  <!-- ===== NOT LOGGED IN STATE ===== -->
+  <div id="stateGuest">
+
+    <!-- Profile placeholder -->
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/20 p-8 mb-6 text-center">
+      <div class="absolute -top-20 -right-20 w-60 h-60 bg-purple-400/10 blur-3xl rounded-full pointer-events-none"></div>
+      <div class="relative">
+        <div class="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
+          <i data-lucide="user" class="w-9 h-9 text-zinc-600" aria-hidden="true"></i>
+        </div>
+        <h1 class="text-xl font-bold mb-1">ログインしていません</h1>
+        <p class="text-sm text-zinc-400 mb-6">プロジェクトの投稿・テスト参加・クレジット管理にはログインが必要です。</p>
+        <a href="login.html" class="inline-flex items-center gap-2 grad-bg text-black font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition glow">
+          <i data-lucide="log-in" class="w-4 h-4" aria-hidden="true"></i>
+          ログイン / 新規登録
+        </a>
+      </div>
+    </div>
+
+    <!-- What you can do after login -->
+    <p class="text-xs font-semibold text-zinc-500 uppercase tracking-widest mb-4">ログイン後にできること</p>
+    <div class="grid sm:grid-cols-2 gap-3 mb-8">
+      <div class="p-5 rounded-2xl bg-ink-800 border border-white/5 flex items-start gap-4">
+        <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="upload" class="w-5 h-5 text-cyan-400" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="font-semibold text-sm mb-1">プロジェクトを投稿</div>
+          <div class="text-xs text-zinc-500 leading-relaxed">β テスターを募集して、フィードバックを集める。</div>
+        </div>
+      </div>
+      <div class="p-5 rounded-2xl bg-ink-800 border border-white/5 flex items-start gap-4">
+        <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="sparkles" class="w-5 h-5 text-purple-400" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="font-semibold text-sm mb-1">マッチングに参加</div>
+          <div class="text-xs text-zinc-500 leading-relaxed">相性の良い開発者・テスターと繋がる。</div>
+        </div>
+      </div>
+      <div class="p-5 rounded-2xl bg-ink-800 border border-white/5 flex items-start gap-4">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="coins" class="w-5 h-5 text-emerald-400" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="font-semibold text-sm mb-1">クレジットを貯める</div>
+          <div class="text-xs text-zinc-500 leading-relaxed">テストして学びノートを書くと、クレジット獲得。</div>
+        </div>
+      </div>
+      <div class="p-5 rounded-2xl bg-ink-800 border border-white/5 flex items-start gap-4">
+        <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center flex-shrink-0">
+          <i data-lucide="notebook-pen" class="w-5 h-5 text-cyan-400" aria-hidden="true"></i>
+        </div>
+        <div>
+          <div class="font-semibold text-sm mb-1">学びノートを投稿</div>
+          <div class="text-xs text-zinc-500 leading-relaxed">テスト後の発見をコミュニティに共有。</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== LOGGED IN STATE ===== -->
+  <div id="stateLoggedIn" class="hidden">
+
+    <!-- Profile -->
+    <div class="relative overflow-hidden rounded-3xl border border-white/10 p-6 sm:p-8 mb-6">
+      <div class="absolute inset-0 grad-bg opacity-5 pointer-events-none"></div>
+      <div class="relative flex items-center gap-5 flex-wrap">
+        <div class="relative">
+          <img id="userAvatar" src="" class="w-20 h-20 rounded-full border-2 border-white/10" alt="プロフィール画像" />
+          <div class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full grad-bg flex items-center justify-center">
+            <i data-lucide="check" class="w-3 h-3 text-black" aria-hidden="true"></i>
+          </div>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <h1 id="userNameEl" class="text-xl font-bold">@username</h1>
+            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border border-cyan-400/30 text-cyan-300 bg-cyan-400/10">BETA</span>
+          </div>
+          <p id="userEmail" class="text-sm text-zinc-400 mt-0.5"></p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="signOutBtn" class="text-sm text-zinc-400 hover:text-white border border-white/10 hover:border-white/20 px-4 py-2 rounded-lg transition">
+            ログアウト
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-3 gap-3 mt-6">
+        <div class="p-4 rounded-xl bg-white/[0.03] border border-white/5 text-center">
+          <div id="statsProjects" class="text-2xl font-bold grad-text">0</div>
+          <div class="text-xs text-zinc-500 mt-0.5">投稿</div>
+        </div>
+        <div class="p-4 rounded-xl bg-white/[0.03] border border-white/5 text-center">
+          <div id="statsTests" class="text-2xl font-bold text-purple-300">0</div>
+          <div class="text-xs text-zinc-500 mt-0.5">テスト済み</div>
+        </div>
+        <div class="p-4 rounded-xl bg-white/[0.03] border border-white/5 text-center">
+          <div id="statsCredits" class="text-2xl font-bold text-emerald-300">0</div>
+          <div class="text-xs text-zinc-500 mt-0.5">クレジット</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- My projects -->
+    <div class="mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-semibold">自分のプロジェクト</h2>
+        <a href="post.html" class="text-xs grad-text font-medium flex items-center gap-1">
+          投稿する <i data-lucide="plus" class="w-3.5 h-3.5" aria-hidden="true"></i>
+        </a>
+      </div>
+      <div id="projectsList" class="space-y-3">
+        <div class="text-center py-4 text-zinc-600 text-xs animate-pulse">読み込み中…</div>
+      </div>
+    </div>
+
+    <!-- Test history -->
+    <div>
+      <h2 class="font-semibold mb-4">テスト履歴</h2>
+      <div id="testHistoryList" class="space-y-2">
+        <div class="text-center py-4 text-zinc-600 text-xs animate-pulse">読み込み中…</div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<!-- Bottom Nav -->
+<nav id="bottomNav" aria-label="ボトムナビゲーション"
+     class="fixed bottom-0 inset-x-0 z-50 glass border-t border-white/10">
+  <div class="flex items-stretch h-16">
+    <a href="BetaLink.html" class="bn-item flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="home" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">ホーム</span>
+    </a>
+    <a href="board.html" class="bn-item flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="layout-list" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">掲示板</span>
+    </a>
+    <div class="flex-1 flex items-center justify-center -mt-4">
+      <a href="post.html" aria-label="プロジェクトを投稿する"
+         class="w-14 h-14 rounded-2xl grad-bg text-black flex items-center justify-center shadow-lg glow">
+        <i data-lucide="plus" class="w-6 h-6" aria-hidden="true"></i>
+      </a>
+    </div>
+    <a href="login.html" class="bn-item flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="bell" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">通知</span>
+    </a>
+    <a href="mypage.html" class="bn-item flex-1 flex flex-col items-center justify-center gap-0.5 text-cyan-400 pt-1">
+      <i data-lucide="user" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">マイページ</span>
+    </a>
+  </div>
+</nav>
+
+<script src="auth.js"></script>
+<script>
+lucide.createIcons();
+
+function esc(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+(async function () {
+  const guestEl  = document.getElementById('stateGuest');
+  const loggedEl = document.getElementById('stateLoggedIn');
+
+  const session = await auth.getSession();
+
+  if (!session) {
+    guestEl.classList.remove('hidden');
+    return;
+  }
+
+  // ナビバー切り替え
+  document.getElementById('navLoginBtn').classList.add('hidden');
+  document.getElementById('navHomeBtn').classList.remove('hidden');
+  document.getElementById('navHomeBtn').classList.add('flex');
+
+  const u        = session.user;
+  const avatar   = u.user_metadata?.avatar_url;
+  const username = u.user_metadata?.user_name || u.email?.split('@')[0] || 'user';
+
+  // プロフィール
+  document.getElementById('userAvatar').src = avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${username}`;
+  document.getElementById('userNameEl').textContent = `@${username}`;
+  document.getElementById('userEmail').textContent  = u.email || '';
+
+  // ログアウト
+  document.getElementById('signOutBtn').addEventListener('click', () => auth.signOut());
+
+  guestEl.classList.add('hidden');
+  loggedEl.classList.remove('hidden');
+
+  // ---- 自分のプロジェクト ----
+  const { data: projects } = await sb.from('projects')
+    .select('*').eq('user_id', u.id).order('created_at', { ascending: false });
+
+  document.getElementById('statsProjects').textContent = projects?.length ?? 0;
+
+  const projectsList = document.getElementById('projectsList');
+  if (!projects || projects.length === 0) {
+    projectsList.innerHTML = `
+      <div class="p-6 rounded-2xl bg-ink-800 border border-dashed border-white/10 text-center">
+        <p class="text-sm text-zinc-500 mb-3">まだプロジェクトがありません</p>
+        <a href="post.html" class="inline-flex items-center gap-1.5 text-sm grad-text font-medium">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          最初のプロジェクトを投稿する
+        </a>
+      </div>`;
+  } else {
+    projectsList.innerHTML = projects.map(p => `
+      <div class="p-4 rounded-2xl bg-ink-800 border border-white/5 flex items-start gap-4">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap mb-1">
+            <span class="font-semibold text-sm">${esc(p.title)}</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded border ${p.status === 'active' ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10' : 'border-zinc-500/30 text-zinc-400 bg-zinc-500/10'}">
+              ${p.status === 'active' ? '募集中' : 'クローズ'}
+            </span>
+          </div>
+          ${p.description ? `<p class="text-xs text-zinc-500 leading-relaxed line-clamp-2">${esc(p.description)}</p>` : ''}
+          <div class="flex items-center gap-3 mt-2 text-xs text-zinc-500">
+            <span>${p.current_count}/${p.target_count} 人</span>
+            <span>${new Date(p.created_at).toLocaleDateString('ja-JP')}</span>
+          </div>
+        </div>
+        <a href="post.html?id=${esc(p.id)}" class="text-xs text-zinc-400 hover:text-white border border-white/10 hover:border-white/20 px-3 py-1.5 rounded-lg transition flex-shrink-0">
+          編集
+        </a>
+      </div>`).join('');
+  }
+
+  // ---- テスト履歴 ----
+  const { data: history } = await sb.from('test_history')
+    .select('*, projects(title)').eq('tester_id', u.id).order('created_at', { ascending: false });
+
+  const totalCredits = history?.reduce((sum, h) => sum + (h.credits_earned || 0), 0) ?? 0;
+  document.getElementById('statsTests').textContent   = history?.length ?? 0;
+  document.getElementById('statsCredits').textContent = totalCredits;
+
+  const historyList = document.getElementById('testHistoryList');
+  if (!history || history.length === 0) {
+    historyList.innerHTML = `
+      <div class="p-6 rounded-2xl bg-ink-800 border border-dashed border-white/10 text-center">
+        <p class="text-sm text-zinc-500 mb-2">テスト履歴はまだありません</p>
+        <a href="board.html" class="inline-flex items-center gap-1.5 text-sm grad-text font-medium">
+          掲示板でプロジェクトを探す
+        </a>
+      </div>`;
+  } else {
+    historyList.innerHTML = history.map(h => `
+      <div class="p-4 rounded-xl bg-ink-800 border border-white/5 flex items-center gap-4">
+        <div class="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="font-medium text-sm">${esc(h.projects?.title || '削除済みプロジェクト')}</div>
+          <div class="text-xs text-zinc-500">${new Date(h.created_at).toLocaleDateString('ja-JP')}</div>
+        </div>
+        <div class="text-emerald-400 font-bold text-sm flex-shrink-0">+${h.credits_earned} pt</div>
+      </div>`).join('');
+  }
+})();
+</script>
+</body>
+</html>

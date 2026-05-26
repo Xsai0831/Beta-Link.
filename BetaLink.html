@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BetaLink — 個人開発者のためのβテスター・マッチングプラットフォーム</title>
+<meta name="description" content="個人開発者とβテスターをつなぐマッチングプラットフォーム。大衆オープン募集と簡易マッチングで、量と質と学びを同時に。ベータ版公開中・完全無料。" />
+<link rel="canonical" href="https://betalink.app/" />
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://betalink.app/" />
+<meta property="og:title" content="BetaLink — 個人開発者のためのβテスター・マッチングプラットフォーム" />
+<meta property="og:description" content="個人開発者とβテスターをつなぐマッチングプラットフォーム。大衆オープン募集と簡易マッチングで、量と質と学びを同時に。ベータ版公開中・完全無料。" />
+<meta property="og:image" content="https://betalink.app/og-image.png" />
+<meta property="og:site_name" content="BetaLink" />
+<meta property="og:locale" content="ja_JP" />
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site" content="@betalink_app" />
+<meta name="twitter:title" content="BetaLink — 個人開発者のためのβテスター・マッチングプラットフォーム" />
+<meta name="twitter:description" content="個人開発者とβテスターをつなぐマッチングプラットフォーム。大衆オープン募集と簡易マッチングで、量と質と学びを同時に。ベータ版公開中・完全無料。" />
+<meta name="twitter:image" content="https://betalink.app/og-image.png" />
+<!-- Favicon (SVG inline) -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2300D4FF'/%3E%3Cstop offset='1' stop-color='%23A855F7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ctext x='16' y='23' text-anchor='middle' font-family='system-ui' font-weight='800' font-size='20' fill='%230A0A0A'%3E%CE%B2%3C/text%3E%3C/svg%3E" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'Noto Sans JP', 'system-ui', 'sans-serif'],
+          mono: ['JetBrains Mono', 'monospace'],
+        },
+        colors: {
+          ink: {
+            900: '#0A0A0A',
+            800: '#0F0F10',
+            700: '#161618',
+            600: '#1C1C1F',
+            500: '#26262B',
+            400: '#3A3A42',
+          },
+        },
+        animation: {
+          'float': 'float 6s ease-in-out infinite',
+          'pulse-slow': 'pulse 4s ease-in-out infinite',
+        },
+        keyframes: {
+          float: {
+            '0%, 100%': { transform: 'translateY(0px)' },
+            '50%': { transform: 'translateY(-10px)' },
+          },
+        },
+      }
+    }
+  }
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', 'Noto Sans JP', system-ui, sans-serif;
+    background-color: #0A0A0A;
+    color: #E4E4E7;
+    -webkit-font-smoothing: antialiased;
+  }
+  .grad-text {
+    background: linear-gradient(135deg, #00D4FF 0%, #A855F7 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .grad-bg {
+    background: linear-gradient(135deg, #00D4FF 0%, #A855F7 100%);
+  }
+  .grad-border {
+    position: relative;
+    background: #0F0F10;
+    border-radius: 16px;
+  }
+  .grad-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(0,212,255,0.5), rgba(168,85,247,0.5));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  .glow {
+    box-shadow: 0 0 40px -10px rgba(0,212,255,0.4), 0 0 80px -20px rgba(168,85,247,0.3);
+  }
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  .radial-fade {
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+  .glass {
+    background: rgba(15, 15, 16, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  details[open] summary .chev { transform: rotate(180deg); }
+  .chev { transition: transform 0.2s ease; }
+  details summary::-webkit-details-marker { display: none; }
+  ::selection { background: rgba(0,212,255,0.3); }
+
+  /* Bottom nav */
+  #bottomNav {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+</style>
+</head>
+<body class="bg-ink-900 text-zinc-200 antialiased relative overflow-x-hidden pb-16">
+
+<!-- ============== AMBIENT BACKGROUND ============== -->
+<div class="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+  <div class="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-cyan-500/10 blur-[120px]"></div>
+  <div class="absolute top-1/3 -right-40 w-[600px] h-[600px] rounded-full bg-purple-500/10 blur-[120px]"></div>
+</div>
+
+<!-- ============== NAVBAR ============== -->
+<header class="fixed top-0 inset-x-0 z-50 glass border-b border-white/5">
+  <nav aria-label="メインナビゲーション" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-3 sm:gap-4">
+    <a href="#" class="flex items-center gap-2 flex-shrink-0">
+      <div class="relative w-8 h-8 rounded-lg grad-bg flex items-center justify-center overflow-hidden">
+        <svg viewBox="0 0 32 32" class="w-8 h-8" aria-hidden="true">
+          <text x="16" y="23" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="800" font-size="20" fill="#0A0A0A">β</text>
+          <circle cx="24" cy="9" r="2.5" fill="#0A0A0A"/>
+        </svg>
+      </div>
+      <span class="font-bold text-lg tracking-tight hidden sm:inline">BetaLink</span>
+      <span class="hidden md:inline text-[10px] font-bold px-1.5 py-0.5 rounded border border-cyan-400/30 text-cyan-300 bg-cyan-400/10 tracking-wider">BETA</span>
+    </a>
+
+    <!-- Search -->
+    <div class="flex-1 max-w-xl relative">
+      <div class="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/10 bg-white/[0.04] hover:bg-white/[0.06] focus-within:border-cyan-400/40 focus-within:bg-white/[0.06] transition">
+        <i data-lucide="search" class="w-4 h-4 text-zinc-500 flex-shrink-0"></i>
+        <input id="navSearch" type="text" placeholder="募集中のプロジェクトを検索…" aria-label="プロジェクトを検索" aria-expanded="false" aria-haspopup="listbox" aria-controls="searchList" autocomplete="off" class="flex-1 bg-transparent text-sm placeholder:text-zinc-500 outline-none min-w-0" />
+        <kbd class="hidden sm:inline text-[10px] font-mono px-1.5 py-0.5 rounded border border-white/10 text-zinc-500 bg-black/30">/</kbd>
+      </div>
+    </div>
+
+    <div class="hidden md:flex items-center gap-6 text-sm text-zinc-400 flex-shrink-0">
+      <a href="#features" class="hover:text-white transition">特徴</a>
+      <a href="#how" class="hover:text-white transition">使い方</a>
+      <a href="board.html" class="hover:text-white transition">掲示板</a>
+      <a href="mypage.html" class="hover:text-white transition">マイページ</a>
+    </div>
+
+    <div class="flex items-center gap-2 flex-shrink-0">
+      <!-- ログイン前 -->
+      <a id="navLoginBtn" href="login.html" class="grad-bg text-black font-semibold text-sm px-3 sm:px-4 py-2 rounded-lg hover:opacity-90 transition flex items-center gap-1.5 glow whitespace-nowrap">
+        <i data-lucide="plus" class="w-4 h-4 sm:hidden" aria-hidden="true"></i>
+        <span class="hidden sm:inline">プロジェクトを投稿</span>
+      </a>
+      <!-- ログイン後 -->
+      <a id="navUserArea" href="mypage.html" class="hidden items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 transition">
+        <img src="" alt="アバター" class="w-7 h-7 rounded-full border border-white/10" />
+        <span data-username class="text-sm text-zinc-300 hidden sm:inline"></span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Search results dropdown -->
+  <div id="searchResults" role="combobox" aria-expanded="false" aria-owns="searchList" class="hidden absolute top-full left-1/2 -translate-x-1/2 w-[min(672px,calc(100%-2rem))] mt-2 rounded-xl border border-white/10 bg-ink-800/95 backdrop-blur-xl shadow-2xl overflow-hidden">
+    <div class="px-4 py-2 border-b border-white/5 text-[10px] uppercase tracking-widest text-zinc-500">検索結果</div>
+    <ul id="searchList" role="listbox" aria-label="検索結果" class="divide-y divide-white/5 max-h-80 overflow-y-auto"></ul>
+    <div class="px-4 py-2 border-t border-white/5 flex items-center justify-between text-xs text-zinc-500">
+      <span><kbd class="font-mono px-1 py-0.5 rounded border border-white/10 bg-black/30">Enter</kbd> で開く</span>
+      <a href="#board" class="grad-text font-medium">コミュニティをすべて見る →</a>
+    </div>
+  </div>
+</header>
+
+<!-- ============== HERO ============== -->
+<section class="relative pt-32 sm:pt-40 pb-20 sm:pb-32 z-10">
+  <div class="absolute inset-0 grid-bg radial-fade pointer-events-none"></div>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+    <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <!-- Left -->
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-xs text-zinc-300 mb-6">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-400"></span>
+          </span>
+          ベータ版公開中 · 現在完全無料
+        </div>
+        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1]">
+          個人開発者同士で<span class="grad-text">テストし合い</span>、<br />
+          最新のアプリから学び合おう。
+        </h1>
+        <p class="mt-6 text-base sm:text-lg text-zinc-400 leading-relaxed max-w-xl">
+          投稿するだけで即テスターが集まる。テストする側は最新アプリを触りながらクレジット獲得。<br />
+          最新のアプリを触って、UX/UI のインスピレーションをコミュニティと共有しよう。
+        </p>
+        <div class="mt-8 flex flex-col sm:flex-row gap-3">
+          <button data-login data-login-dest="post.html" class="grad-bg text-black font-semibold px-6 py-3.5 rounded-xl hover:opacity-90 transition flex items-center justify-center gap-2 glow">
+            今すぐプロジェクトを投稿する
+            <i data-lucide="arrow-right" class="w-4 h-4" aria-hidden="true"></i>
+          </button>
+          <button data-login data-login-dest="board.html" class="border border-white/15 bg-white/5 hover:bg-white/10 transition font-medium px-6 py-3.5 rounded-xl flex items-center justify-center gap-2">
+            <i data-lucide="book-open" class="w-4 h-4" aria-hidden="true"></i>
+            テスターとして参加して勉強
+          </button>
+        </div>
+        <div class="mt-8 flex items-center gap-4 text-xs text-zinc-500">
+          <div class="flex -space-x-2">
+            <img src="https://picsum.photos/seed/a1/40" class="w-7 h-7 rounded-full border-2 border-ink-900" alt="" />
+            <img src="https://picsum.photos/seed/a2/40" class="w-7 h-7 rounded-full border-2 border-ink-900" alt="" />
+            <img src="https://picsum.photos/seed/a3/40" class="w-7 h-7 rounded-full border-2 border-ink-900" alt="" />
+            <img src="https://picsum.photos/seed/a4/40" class="w-7 h-7 rounded-full border-2 border-ink-900" alt="" />
+          </div>
+          <span>ベータ期間中は <span class="text-white font-semibold">すべての機能が無料</span></span>
+        </div>
+      </div>
+
+      <!-- Right: Bulletin Board Mockup (decorative — real content in #board below) -->
+      <div class="relative" aria-hidden="true">
+        <div class="absolute -inset-4 grad-bg opacity-20 blur-3xl rounded-3xl"></div>
+        <div class="relative grad-border p-1 animate-float">
+          <div class="rounded-2xl bg-ink-800 overflow-hidden border border-white/5">
+            <!-- Window chrome -->
+            <div class="flex items-center gap-2 px-4 py-3 border-b border-white/5 bg-ink-700">
+              <div class="flex gap-1.5">
+                <div class="w-3 h-3 rounded-full bg-red-500/70"></div>
+                <div class="w-3 h-3 rounded-full bg-yellow-500/70"></div>
+                <div class="w-3 h-3 rounded-full bg-green-500/70"></div>
+              </div>
+              <div class="flex-1 text-center text-xs text-zinc-500 font-mono">betalink.app/board</div>
+            </div>
+
+            <!-- Board header -->
+            <div class="px-5 pt-4 pb-3 border-b border-white/5 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="layout-grid" class="w-4 h-4 text-cyan-400"></i>
+                <span class="font-semibold text-sm">プロジェクト掲示板</span>
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border border-cyan-400/30 text-cyan-300 bg-cyan-400/10 tracking-wider">BETA</span>
+              </div>
+            </div>
+
+            <!-- Filter tabs -->
+            <div class="px-5 py-3 border-b border-white/5 flex items-center gap-2 text-xs overflow-x-auto">
+              <span class="px-2.5 py-1 rounded-md bg-white/10 text-white font-medium whitespace-nowrap">すべて</span>
+              <span class="px-2.5 py-1 rounded-md text-zinc-500 hover:text-zinc-300 whitespace-nowrap">iOS</span>
+              <span class="px-2.5 py-1 rounded-md text-zinc-500 hover:text-zinc-300 whitespace-nowrap">Android</span>
+              <span class="px-2.5 py-1 rounded-md text-zinc-500 hover:text-zinc-300 whitespace-nowrap">Web</span>
+              <span class="px-2.5 py-1 rounded-md text-zinc-500 hover:text-zinc-300 whitespace-nowrap">AI</span>
+              <span class="px-2.5 py-1 rounded-md text-zinc-500 hover:text-zinc-300 whitespace-nowrap">SaaS</span>
+            </div>
+
+            <!-- Thread list -->
+            <div class="divide-y divide-white/5">
+              <!-- Post 1 (pinned) -->
+              <div class="px-5 py-3.5 hover:bg-white/[0.02] transition flex items-start gap-3">
+                <div class="flex flex-col items-center pt-0.5 w-7 flex-shrink-0">
+                  <i data-lucide="pin" class="w-3.5 h-3.5 text-cyan-400"></i>
+                  <span class="text-[10px] text-cyan-400 mt-0.5">PIN</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/20 font-mono">iOS</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/20 font-mono">AI</span>
+                    <h4 class="font-semibold text-sm truncate">Flowy — AI搭載タスク管理</h4>
+                  </div>
+                  <div class="text-xs text-zinc-500 mt-1 flex items-center gap-3 flex-wrap">
+                    <span>@kenji_dev</span>
+                    <span class="flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i>87/100</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Post 2 -->
+              <div class="px-5 py-3.5 hover:bg-white/[0.02] transition flex items-start gap-3">
+                <div class="flex flex-col items-center pt-0.5 w-7 flex-shrink-0 text-zinc-600 text-[10px] font-mono">
+                  #082
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 font-mono">Web</span>
+                    <h4 class="font-semibold text-sm truncate">家計簿SaaS「ZeniLog」V2</h4>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/20">急募</span>
+                  </div>
+                  <div class="text-xs text-zinc-500 mt-1 flex items-center gap-3 flex-wrap">
+                    <span>@miho_designs</span>
+                    <span class="flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i>42/50</span>
+                    <span class="flex items-center gap-1"><i data-lucide="globe" class="w-3 h-3"></i>大衆オープン</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Post 3 -->
+              <div class="px-5 py-3.5 hover:bg-white/[0.02] transition flex items-start gap-3">
+                <div class="flex flex-col items-center pt-0.5 w-7 flex-shrink-0 text-zinc-600 text-[10px] font-mono">
+                  #081
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/20 font-mono">Android</span>
+                    <h4 class="font-semibold text-sm truncate">記憶定着アプリ「Kioku」β2</h4>
+                  </div>
+                  <div class="text-xs text-zinc-500 mt-1 flex items-center gap-3 flex-wrap">
+                    <span>@nori_dev</span>
+                    <span class="flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i>23/30</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Post 4 -->
+              <div class="px-5 py-3.5 hover:bg-white/[0.02] transition flex items-start gap-3 opacity-60">
+                <div class="flex flex-col items-center pt-0.5 w-7 flex-shrink-0 text-zinc-600 text-[10px] font-mono">
+                  #080
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-500/15 text-zinc-400 border border-zinc-500/20 font-mono">SaaS</span>
+                    <h4 class="font-semibold text-sm truncate">名刺管理ツール「Meets」</h4>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-500/15 text-zinc-400 border border-zinc-500/20">締切</span>
+                  </div>
+                  <div class="text-xs text-zinc-500 mt-1 flex items-center gap-3 flex-wrap">
+                    <span>@ryo_indie</span>
+                    <span class="flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i>50/50</span>
+                    <span class="flex items-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i>27</span>
+                    <span>3時間前</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-5 py-3 border-t border-white/5 flex items-center justify-between text-xs">
+              <span class="text-zinc-500">本日 <span class="text-white font-semibold">12</span> 件の新規投稿</span>
+              <span class="grad-text font-medium flex items-center gap-1">もっと見る <i data-lucide="arrow-right" class="w-3 h-3"></i></span>
+            </div>
+          </div>
+        </div>
+        <div class="hidden sm:flex absolute -right-4 bottom-16 items-center gap-2 px-3 py-2 rounded-xl glass border border-white/10 animate-float" style="animation-delay: -4s">
+          <i data-lucide="refresh-cw" class="w-4 h-4 text-purple-400"></i>
+          <span class="text-xs">相互テストでクレジット獲得</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== PROBLEM ============== -->
+<section class="relative z-10 py-20 sm:py-28">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-2xl">
+      <div class="text-sm font-semibold grad-text mb-3">PROBLEM</div>
+      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+        X 募集だけだと、<br class="sm:hidden" />限界がある。
+      </h2>
+      <p class="mt-4 text-zinc-400 leading-relaxed">
+        SNS で β テスターを募るのが定番ですが、本当に欲しい「量」と「質」と「学び」が同時に手に入ることは稀です。
+      </p>
+    </div>
+
+    <div class="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="p-6 rounded-2xl bg-ink-800 border border-white/5 hover:border-white/10 transition">
+        <div class="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-4">
+          <!-- lucide: users-x -->
+          <i data-lucide="user-x" class="w-5 h-5 text-red-400"></i>
+        </div>
+        <h3 class="font-semibold mb-2">フォロワーがいないと届かない</h3>
+        <p class="text-sm text-zinc-500 leading-relaxed">影響力勝負になりがちで、駆け出しの個人開発者には不利。</p>
+      </div>
+      <div class="p-6 rounded-2xl bg-ink-800 border border-white/5 hover:border-white/10 transition">
+        <div class="w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center mb-4">
+          <!-- lucide: message-square-off -->
+          <i data-lucide="message-square-off" class="w-5 h-5 text-orange-400"></i>
+        </div>
+        <h3 class="font-semibold mb-2">「いいね」しか返ってこない</h3>
+        <p class="text-sm text-zinc-500 leading-relaxed">深いフィードバックが欲しいのに、お祝いコメントで止まる。</p>
+      </div>
+      <div class="p-6 rounded-2xl bg-ink-800 border border-white/5 hover:border-white/10 transition">
+        <div class="w-10 h-10 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center mb-4">
+          <!-- lucide: shuffle -->
+          <i data-lucide="shuffle" class="w-5 h-5 text-yellow-400"></i>
+        </div>
+        <h3 class="font-semibold mb-2">層が合わない人ばかり</h3>
+        <p class="text-sm text-zinc-500 leading-relaxed">ターゲットじゃない人の応募が増え、検証ノイズだけ膨らむ。</p>
+      </div>
+      <div class="p-6 rounded-2xl bg-ink-800 border border-white/5 hover:border-white/10 transition">
+        <div class="w-10 h-10 rounded-lg bg-pink-500/10 border border-pink-500/20 flex items-center justify-center mb-4">
+          <!-- lucide: book-x -->
+          <i data-lucide="book-x" class="w-5 h-5 text-pink-400"></i>
+        </div>
+        <h3 class="font-semibold mb-2">触っても学びに残らない</h3>
+        <p class="text-sm text-zinc-500 leading-relaxed">他のインディーアプリから UX を盗む機会が、SNS には無い。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== SOLUTION ============== -->
+<section class="relative z-10 py-20 sm:py-28 border-t border-white/5">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-2xl mx-auto text-center mb-14">
+      <div class="text-sm font-semibold grad-text mb-3">SOLUTION</div>
+      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight">
+        BetaLink なら、<br />
+        <span class="grad-text">すぐ集まる。</span>
+      </h2>
+      <p class="mt-6 text-zinc-400 leading-relaxed">
+        タグを付けて投稿するだけ。<br class="hidden sm:inline" />
+        相互テストと学びを乗せた、新しいベータ文化です。
+      </p>
+    </div>
+
+    <div class="max-w-xl mx-auto">
+      <!-- 大衆オープン -->
+      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-cyan-500/10 to-transparent border border-cyan-500/20 p-8 lg:p-10">
+        <div class="absolute -top-20 -right-20 w-60 h-60 bg-cyan-400/15 blur-3xl rounded-full"></div>
+        <div class="relative">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-xs text-cyan-300 mb-5">
+            <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+            大衆オープン募集
+          </div>
+          <h3 class="text-2xl font-bold mb-3">誰でも、すぐ参加。</h3>
+          <p class="text-zinc-400 leading-relaxed mb-6">タグを付けて投稿するだけで、誰でも即参加できる公開枠。</p>
+          <div class="rounded-xl bg-ink-700 border border-white/5 p-4">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs text-zinc-500">投稿例</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/20">公開中</span>
+            </div>
+            <div class="text-sm font-semibold mb-1">写真AI整理アプリ「Snaply」</div>
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-zinc-500">応募 87 / 100</span>
+              <div class="w-32 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                <div class="h-full w-[87%] grad-bg"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- [MATCHING] 簡易マッチング（MVP後に復活予定）
+      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/20 p-8 lg:p-10">
+        ...マッチングカード...
+      </div>
+      -->
+    </div>
+  </div>
+</section>
+
+<!-- ============== LIVE BOARD ============== -->
+<section id="board" class="relative z-10 py-20 sm:py-28 border-t border-white/5 scroll-mt-20">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-end justify-between flex-wrap gap-4 mb-10">
+      <div>
+        <div class="text-sm font-semibold grad-text mb-3">LIVE BOARD</div>
+        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+          いま、掲示板で<br class="sm:hidden" />募集中のプロジェクト
+        </h2>
+      </div>
+      <div class="flex items-center gap-3 text-xs">
+        <span class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
+          <span class="relative flex h-1.5 w-1.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400"></span>
+          </span>
+          リアルタイム更新
+        </span>
+      </div>
+    </div>
+
+    <div class="grad-border p-1 rounded-2xl">
+      <div class="rounded-2xl bg-ink-800 overflow-hidden">
+        <!-- Tabs / sort bar -->
+        <div class="px-5 py-3 border-b border-white/5 flex items-center justify-between flex-wrap gap-3">
+          <div role="group" aria-label="並び替え" class="flex items-center gap-1 text-xs">
+            <button aria-pressed="true" class="px-3 py-1.5 rounded-md bg-white/10 text-white font-medium">最新</button>
+            <button aria-pressed="false" class="px-3 py-1.5 rounded-md text-zinc-500 hover:text-zinc-300">人気</button>
+            <button aria-pressed="false" class="px-3 py-1.5 rounded-md text-zinc-500 hover:text-zinc-300">急募</button>
+            <button aria-pressed="false" class="px-3 py-1.5 rounded-md text-zinc-500 hover:text-zinc-300">終了間近</button>
+          </div>
+          <div class="flex items-center gap-2 text-xs text-zinc-500">
+            <i data-lucide="search" class="w-3.5 h-3.5"></i>
+            <span class="font-mono">/ 検索</span>
+          </div>
+        </div>
+
+        <!-- Thread rows -->
+        <div class="divide-y divide-white/5 font-sans">
+          <!-- Row -->
+          <a href="#" class="grid grid-cols-12 gap-3 px-5 py-4 hover:bg-white/[0.03] transition items-center">
+            <div class="col-span-1 text-zinc-600 font-mono text-xs hidden sm:block">#087</div>
+            <div class="col-span-12 sm:col-span-7">
+              <div class="flex items-center gap-2 flex-wrap mb-1.5">
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/20 font-mono">iOS</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/20 font-mono">AI</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/20">急募</span>
+              </div>
+              <h4 class="font-semibold text-base mb-0.5">写真AI整理アプリ「Snaply」のクローズドβ募集</h4>
+              <p class="text-xs text-zinc-500 line-clamp-1">数千枚の写真を自動分類するAIアプリです。プライバシー設計を検証したく…</p>
+            </div>
+            <div class="col-span-12 sm:col-span-4 flex items-center justify-between sm:justify-end gap-4 text-xs text-zinc-500">
+              <div class="flex items-center gap-1.5"><img src="https://picsum.photos/seed/p1/40" class="w-5 h-5 rounded-full" alt="" /><span>@kenji_dev</span></div>
+              <div class="flex items-center gap-3">
+                <span class="flex items-center gap-1"><i data-lucide="users" class="w-3.5 h-3.5"></i>87</span>
+                <span class="flex items-center gap-1"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i>34</span>
+                <span>2分</span>
+              </div>
+            </div>
+          </a>
+
+          <a href="#" class="grid grid-cols-12 gap-3 px-5 py-4 hover:bg-white/[0.03] transition items-center">
+            <div class="col-span-1 text-zinc-600 font-mono text-xs hidden sm:block">#086</div>
+            <div class="col-span-12 sm:col-span-7">
+              <div class="flex items-center gap-2 flex-wrap mb-1.5">
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 font-mono">Web</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-500/15 text-zinc-300 border border-zinc-500/20 font-mono">SaaS</span>
+              </div>
+              <h4 class="font-semibold text-base mb-0.5">家計簿SaaS「ZeniLog」V2 — レシート読取り精度の検証</h4>
+              <p class="text-xs text-zinc-500 line-clamp-1">毎日のレシート登録の体験を、ベータユーザーで一緒に磨きたいです。</p>
+            </div>
+            <div class="col-span-12 sm:col-span-4 flex items-center justify-between sm:justify-end gap-4 text-xs text-zinc-500">
+              <div class="flex items-center gap-1.5"><img src="https://picsum.photos/seed/p2/40" class="w-5 h-5 rounded-full" alt="" /><span>@miho_designs</span></div>
+              <div class="flex items-center gap-3">
+                <span class="flex items-center gap-1"><i data-lucide="users" class="w-3.5 h-3.5"></i>42</span>
+                <span class="flex items-center gap-1"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i>18</span>
+                <span>14分</span>
+              </div>
+            </div>
+          </a>
+
+          <a href="#" class="grid grid-cols-12 gap-3 px-5 py-4 hover:bg-white/[0.03] transition items-center">
+            <div class="col-span-1 text-zinc-600 font-mono text-xs hidden sm:block">#085</div>
+            <div class="col-span-12 sm:col-span-7">
+              <div class="flex items-center gap-2 flex-wrap mb-1.5">
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/20 font-mono">Android</span>
+              </div>
+              <h4 class="font-semibold text-base mb-0.5">記憶定着アプリ「Kioku」β2リリース、フィードバック募集中</h4>
+              <p class="text-xs text-zinc-500 line-clamp-1">忘却曲線ベースの学習アプリです。SRSの体感を一緒に検証してくれる方を募集します。</p>
+            </div>
+            <div class="col-span-12 sm:col-span-4 flex items-center justify-between sm:justify-end gap-4 text-xs text-zinc-500">
+              <div class="flex items-center gap-1.5"><img src="https://picsum.photos/seed/p3/40" class="w-5 h-5 rounded-full" alt="" /><span>@nori_dev</span></div>
+              <div class="flex items-center gap-3">
+                <span class="flex items-center gap-1"><i data-lucide="users" class="w-3.5 h-3.5"></i>23</span>
+                <span class="flex items-center gap-1"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i>9</span>
+                <span>1時間</span>
+              </div>
+            </div>
+          </a>
+
+          <a href="#" class="grid grid-cols-12 gap-3 px-5 py-4 hover:bg-white/[0.03] transition items-center">
+            <div class="col-span-1 text-zinc-600 font-mono text-xs hidden sm:block">#084</div>
+            <div class="col-span-12 sm:col-span-7">
+              <div class="flex items-center gap-2 flex-wrap mb-1.5">
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/20 font-mono">iOS</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 font-mono">Web</span>
+              </div>
+              <h4 class="font-semibold text-base mb-0.5">音声メモ → 自動議事録「KikiToru」のクローズドβ</h4>
+              <p class="text-xs text-zinc-500 line-clamp-1">録音から要点抽出までを自動化。会議が多い人にこそ触ってほしいです。</p>
+            </div>
+            <div class="col-span-12 sm:col-span-4 flex items-center justify-between sm:justify-end gap-4 text-xs text-zinc-500">
+              <div class="flex items-center gap-1.5"><img src="https://picsum.photos/seed/p4/40" class="w-5 h-5 rounded-full" alt="" /><span>@aki_pm</span></div>
+              <div class="flex items-center gap-3">
+                <span class="flex items-center gap-1"><i data-lucide="users" class="w-3.5 h-3.5"></i>61</span>
+                <span class="flex items-center gap-1"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i>22</span>
+                <span>3時間</span>
+              </div>
+            </div>
+          </a>
+
+          <a href="#" class="grid grid-cols-12 gap-3 px-5 py-4 hover:bg-white/[0.03] transition items-center">
+            <div class="col-span-1 text-zinc-600 font-mono text-xs hidden sm:block">#083</div>
+            <div class="col-span-12 sm:col-span-7">
+              <div class="flex items-center gap-2 flex-wrap mb-1.5">
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/20 font-mono">AI</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 font-mono">Web</span>
+              </div>
+              <h4 class="font-semibold text-base mb-0.5">プロンプト管理ツール「Promp.it」 — エンジニア向けβ</h4>
+              <p class="text-xs text-zinc-500 line-clamp-1">日常的にLLMを使う方、プロンプトのバージョン管理体験を試してください。</p>
+            </div>
+            <div class="col-span-12 sm:col-span-4 flex items-center justify-between sm:justify-end gap-4 text-xs text-zinc-500">
+              <div class="flex items-center gap-1.5"><img src="https://picsum.photos/seed/p5/40" class="w-5 h-5 rounded-full" alt="" /><span>@yuto_dev</span></div>
+              <div class="flex items-center gap-3">
+                <span class="flex items-center gap-1"><i data-lucide="users" class="w-3.5 h-3.5"></i>108</span>
+                <span class="flex items-center gap-1"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i>41</span>
+                <span>5時間</span>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <div class="px-5 py-4 border-t border-white/5 flex items-center justify-between text-xs">
+          <span class="text-zinc-500">87 件のうち 5 件を表示中</span>
+          <a href="#cta" class="grad-text font-medium flex items-center gap-1">掲示板をすべて見る <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== FEATURES ============== -->
+<section id="features" class="relative z-10 py-20 sm:py-28 border-t border-white/5 scroll-mt-20">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-2xl mx-auto text-center">
+      <div class="text-sm font-semibold grad-text mb-3">FEATURES</div>
+      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+        ソロ開発の全工程を、<br />ひとつのプラットフォームで。
+      </h2>
+      <p class="mt-4 text-zinc-400">募集から配信、フィードバック分析まで。</p>
+    </div>
+
+    <div class="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- ① 大衆オープン募集 -->
+      <div class="p-6 rounded-2xl bg-ink-800 border border-white/5 hover:border-cyan-400/30 transition group">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-500/5 border border-cyan-500/20 flex items-center justify-center mb-5">
+          <!-- lucide: globe -->
+          <i data-lucide="globe" class="w-5 h-5 text-cyan-400"></i>
+        </div>
+        <h3 class="font-semibold text-lg mb-2">大衆オープン募集</h3>
+        <p class="text-sm text-zinc-400 leading-relaxed">タグを付けて投稿するだけで、誰でも即参加できる公開枠。20 人以上もすぐに集まります。</p>
+      </div>
+
+      <!-- [MATCHING] 簡易マッチング（MVP後に復活予定）
+      <div class="p-6 rounded-2xl bg-ink-800 border border-white/5 hover:border-purple-400/30 transition group">
+        <i data-lucide="sparkles" class="w-5 h-5 text-purple-400"></i>
+        <h3>簡易マッチング</h3>
+        <p>興味・デバイス・相互希望からマッチ度を ★ で表示。</p>
+      </div>
+      -->
+
+      <!-- ③ 相互テスト＆クレジット制 -->
+      <div class="p-6 rounded-2xl bg-ink-800 border border-white/5 hover:border-cyan-400/30 transition group">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-500/5 border border-cyan-500/20 flex items-center justify-center mb-5">
+          <!-- lucide: refresh-cw -->
+          <i data-lucide="refresh-cw" class="w-5 h-5 text-cyan-400"></i>
+        </div>
+        <h3 class="font-semibold text-lg mb-2">相互テスト＆クレジット制</h3>
+        <p class="text-sm text-zinc-400 leading-relaxed">他の人のアプリをテストすると「クレジット」獲得。次は自分の募集が優先表示されます。</p>
+      </div>
+
+      <!-- ④ 学びノート共有 -->
+      <div class="p-6 rounded-2xl bg-ink-800 border border-white/5 hover:border-purple-400/30 transition group">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-500/5 border border-purple-500/20 flex items-center justify-center mb-5">
+          <!-- lucide: notebook-pen -->
+          <i data-lucide="notebook-pen" class="w-5 h-5 text-purple-400"></i>
+        </div>
+        <h3 class="font-semibold text-lg mb-2">学びノート共有</h3>
+        <p class="text-sm text-zinc-400 leading-relaxed">テスト後に気づいた UI / UX の発見をコミュニティに公開。みんなの集合知になります。</p>
+      </div>
+
+      <!-- ⑤ インスピレーション閲覧 -->
+      <div class="p-6 rounded-2xl bg-ink-800 border border-white/5 hover:border-cyan-400/30 transition group">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-500/5 border border-cyan-500/20 flex items-center justify-center mb-5">
+          <!-- lucide: lightbulb -->
+          <i data-lucide="lightbulb" class="w-5 h-5 text-cyan-400"></i>
+        </div>
+        <h3 class="font-semibold text-lg mb-2">インスピレーション閲覧</h3>
+        <p class="text-sm text-zinc-400 leading-relaxed">テスト目的ではなく「勉強」として募集中アプリを見学可能。最新の個人開発トレンドが分かります。</p>
+      </div>
+
+      <!-- ⑥ フィードバック自動集計＋進捗管理 -->
+      <div class="p-6 rounded-2xl bg-ink-800 border border-white/5 hover:border-purple-400/30 transition group">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-500/5 border border-purple-500/20 flex items-center justify-center mb-5">
+          <!-- lucide: bar-chart-3 -->
+          <i data-lucide="bar-chart-3" class="w-5 h-5 text-purple-400"></i>
+        </div>
+        <h3 class="font-semibold text-lg mb-2">FB 自動集計＋進捗管理</h3>
+        <p class="text-sm text-zinc-400 leading-relaxed">フィードバックを自動でカテゴライズ。バグ・改善・好意の比率と対応状況がダッシュボードで一目に。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== HOW IT WORKS ============== -->
+<section id="how" class="relative z-10 py-20 sm:py-28 border-t border-white/5 scroll-mt-20">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-2xl mx-auto text-center">
+      <div class="text-sm font-semibold grad-text mb-3">HOW IT WORKS</div>
+      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+        3ステップで、テスター獲得まで。
+      </h2>
+    </div>
+
+    <div class="mt-14 grid lg:grid-cols-3 gap-6 relative">
+      <!-- connecting line -->
+      <div class="hidden lg:block absolute top-12 left-[16%] right-[16%] h-px bg-gradient-to-r from-cyan-400/40 via-purple-500/40 to-cyan-400/40"></div>
+
+      <div class="relative">
+        <div class="grad-border p-1 rounded-2xl">
+          <div class="bg-ink-800 rounded-2xl p-6 h-full">
+            <div class="w-12 h-12 rounded-full grad-bg text-black font-bold text-xl flex items-center justify-center mb-5">1</div>
+            <h3 class="font-semibold text-lg mb-2">プロジェクトを投稿</h3>
+            <p class="text-sm text-zinc-400 leading-relaxed mb-4">「大衆オープン」か「マッチング希望」を選んで投稿。タグと検証したい仮説を 3 分で。</p>
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 p-2 rounded-md bg-cyan-500/5 border border-cyan-500/20">
+                <i data-lucide="globe" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span class="text-xs">大衆オープン募集</span>
+                <i data-lucide="check" class="w-3 h-3 ml-auto text-cyan-400"></i>
+              </div>
+              <div class="flex items-center gap-2 p-2 rounded-md bg-purple-500/5 border border-purple-500/10">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-400"></i>
+                <span class="text-xs">マッチング希望</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="relative">
+        <div class="grad-border p-1 rounded-2xl">
+          <div class="bg-ink-800 rounded-2xl p-6 h-full">
+            <div class="w-12 h-12 rounded-full grad-bg text-black font-bold text-xl flex items-center justify-center mb-5">2</div>
+            <h3 class="font-semibold text-lg mb-2">テスターが参加</h3>
+            <p class="text-sm text-zinc-400 leading-relaxed mb-4">掲示板に投稿が公開されると、テスターが自由に参加できます。</p>
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 text-xs">
+                <img src="https://picsum.photos/seed/t1/40" class="w-6 h-6 rounded-full" alt="" />
+                <span class="text-zinc-300">@yuto_dev</span>
+                <span class="text-cyan-300 ml-auto font-mono">参加</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs">
+                <img src="https://picsum.photos/seed/t2/40" class="w-6 h-6 rounded-full" alt="" />
+                <span class="text-zinc-300">@aki_pm</span>
+                <span class="text-cyan-300 ml-auto font-mono">参加</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs">
+                <img src="https://picsum.photos/seed/t3/40" class="w-6 h-6 rounded-full" alt="" />
+                <span class="text-zinc-300">@nori_design</span>
+                <span class="text-cyan-300 ml-auto font-mono">参加</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="relative">
+        <div class="grad-border p-1 rounded-2xl">
+          <div class="bg-ink-800 rounded-2xl p-6 h-full">
+            <div class="w-12 h-12 rounded-full grad-bg text-black font-bold text-xl flex items-center justify-center mb-5">3</div>
+            <h3 class="font-semibold text-lg mb-2">テスト → 学びノート → クレジット</h3>
+            <p class="text-sm text-zinc-400 leading-relaxed mb-4">受け取った FB で改善。テストした側は学びノートを書いてクレジット獲得。</p>
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 p-2 rounded-md bg-emerald-500/5 border border-emerald-500/10">
+                <i data-lucide="message-circle" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span class="text-xs">構造化 FB を受信</span>
+              </div>
+              <div class="flex items-center gap-2 p-2 rounded-md bg-purple-500/5 border border-purple-500/10">
+                <i data-lucide="notebook-pen" class="w-3.5 h-3.5 text-purple-400"></i>
+                <span class="text-xs">学びノートを投稿</span>
+              </div>
+              <div class="flex items-center gap-2 p-2 rounded-md bg-cyan-500/5 border border-cyan-500/10">
+                <i data-lucide="coins" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span class="text-xs">+3 クレジット獲得</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== FOR DEV / FOR TESTER ============== -->
+<section class="relative z-10 py-20 sm:py-28 border-t border-white/5">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center max-w-2xl mx-auto mb-14">
+      <div class="text-sm font-semibold grad-text mb-3">FOR EVERYONE</div>
+      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+        作る人にも、試す人にも、いいことを。
+      </h2>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <!-- For Developers -->
+      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-cyan-500/10 to-transparent border border-cyan-500/20 p-8 lg:p-10">
+        <div class="absolute -top-20 -right-20 w-60 h-60 bg-cyan-400/20 blur-3xl rounded-full"></div>
+        <div class="relative">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-500/30 text-xs text-cyan-300 mb-5">
+            <i data-lucide="code-2" class="w-3.5 h-3.5"></i>
+            For Developers
+          </div>
+          <h3 class="text-2xl font-bold mb-4">作る人のために</h3>
+          <ul class="space-y-3 mb-8">
+            <li class="flex items-start gap-3">
+              <i data-lucide="check-circle-2" class="w-5 h-5 text-cyan-400 mt-0.5 flex-shrink-0"></i>
+              <div>
+                <div class="font-medium">大衆オープンで「量」を一気に確保</div>
+                <div class="text-sm text-zinc-400">SNS 集客に費やす時間をゼロに。</div>
+              </div>
+            </li>
+            <!-- [MATCHING] マッチングで「質」を上げる（MVP後に復活予定） -->
+            <li class="flex items-start gap-3">
+              <i data-lucide="check-circle-2" class="w-5 h-5 text-cyan-400 mt-0.5 flex-shrink-0"></i>
+              <div>
+                <div class="font-medium">他人のアプリから「学び」を持ち帰る</div>
+                <div class="text-sm text-zinc-400">相互テストは、最高の UX 勉強でもあります。</div>
+              </div>
+            </li>
+          </ul>
+          <button data-login data-login-dest="post.html" class="inline-flex items-center gap-2 text-cyan-300 hover:text-cyan-200 transition font-medium">
+            開発者として始める <i data-lucide="arrow-right" class="w-4 h-4" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- For Testers -->
+      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/20 p-8 lg:p-10">
+        <div class="absolute -top-20 -right-20 w-60 h-60 bg-purple-400/20 blur-3xl rounded-full"></div>
+        <div class="relative">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-500/30 text-xs text-purple-300 mb-5">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            For Testers
+          </div>
+          <h3 class="text-2xl font-bold mb-4">試す人のために</h3>
+          <ul class="space-y-3 mb-8">
+            <li class="flex items-start gap-3">
+              <i data-lucide="check-circle-2" class="w-5 h-5 text-purple-400 mt-0.5 flex-shrink-0"></i>
+              <div>
+                <div class="font-medium">未公開の個人開発アプリをいち早く体験</div>
+                <div class="text-sm text-zinc-400">尖った UI / アイデアに触れ、勉強としても一流。</div>
+              </div>
+            </li>
+            <li class="flex items-start gap-3">
+              <i data-lucide="check-circle-2" class="w-5 h-5 text-purple-400 mt-0.5 flex-shrink-0"></i>
+              <div>
+                <div class="font-medium">自分の声が直接プロダクトに反映</div>
+                <div class="text-sm text-zinc-400">開発者とスレッドで直接やり取り。</div>
+              </div>
+            </li>
+            <li class="flex items-start gap-3">
+              <i data-lucide="check-circle-2" class="w-5 h-5 text-purple-400 mt-0.5 flex-shrink-0"></i>
+              <div>
+                <div class="font-medium">テスト = 勉強 = クレジットの三拍子</div>
+                <div class="text-sm text-zinc-400">学びノートを書くと、次は自分のアプリを優先表示。</div>
+              </div>
+            </li>
+          </ul>
+          <button data-login data-login-dest="board.html" class="inline-flex items-center gap-2 text-purple-300 hover:text-purple-200 transition font-medium">
+            テスターとして登録 <i data-lucide="arrow-right" class="w-4 h-4" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== TESTIMONIALS ============== -->
+<section class="relative z-10 py-20 sm:py-28 border-t border-white/5">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-2xl mx-auto text-center mb-14">
+      <div class="text-sm font-semibold grad-text mb-3">TESTIMONIALS</div>
+      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+        日本のソロ開発者から、<br />たくさんの声。
+      </h2>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-4">
+      <!-- Testimonial 1 -->
+      <div class="p-6 rounded-2xl bg-ink-800 border border-white/5">
+        <div class="flex gap-1 mb-4">
+          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+        </div>
+        <p class="text-zinc-300 leading-relaxed mb-6">
+          「「テストしたらクレジット」の仕組みが面白い。他人のアプリを触るのが勉強になって、自分のアプリのテスターも加速的に集まる。一石二鳥。」
+        </p>
+        <div class="flex items-center gap-3">
+          <img src="https://picsum.photos/seed/test1/80" class="w-10 h-10 rounded-full" alt="" />
+          <div>
+            <div class="font-semibold text-sm">佐藤 健太</div>
+            <div class="text-xs text-zinc-500">メモアプリ "Inku" 作者</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Testimonial 2 -->
+      <div class="p-6 rounded-2xl bg-ink-800 border border-white/5">
+        <div class="flex gap-1 mb-4">
+          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+        </div>
+        <p class="text-zinc-300 leading-relaxed mb-6">
+          「学びノートの文化が本当にいい。試してもらう → 改善、だけじゃなくて、「他人のアプリで勉強 → 自分に反映」のループがようやく高速で回る。」
+        </p>
+        <div class="flex items-center gap-3">
+          <img src="https://picsum.photos/seed/test2/80" class="w-10 h-10 rounded-full" alt="" />
+          <div>
+            <div class="font-semibold text-sm">三浦 美穂</div>
+            <div class="text-xs text-zinc-500">家計簿アプリ "ZeniLog" 作者</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Testimonial 3 -->
+      <div class="p-6 rounded-2xl bg-ink-800 border border-white/5">
+        <div class="flex gap-1 mb-4">
+          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
+        </div>
+        <p class="text-zinc-300 leading-relaxed mb-6">
+          「マッチングで出会った個人開発者と、その後もお互いのアプリをテストし合う仲に。コミュニティが本当に良きテスト仲間になった。」
+        </p>
+        <div class="flex items-center gap-3">
+          <img src="https://picsum.photos/seed/test3/80" class="w-10 h-10 rounded-full" alt="" />
+          <div>
+            <div class="font-semibold text-sm">山田 涼介</div>
+            <div class="text-xs text-zinc-500">学習管理SaaS "Kioku" 創業者</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== FAQ ============== -->
+<section id="faq" class="relative z-10 py-20 sm:py-28 border-t border-white/5 scroll-mt-20">
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-14">
+      <div class="text-sm font-semibold grad-text mb-3">FAQ</div>
+      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+        よくある質問
+      </h2>
+    </div>
+
+    <div class="space-y-3">
+      <details class="group p-5 rounded-xl bg-ink-800 border border-white/5 hover:border-white/10 transition" open>
+        <summary class="flex items-center justify-between cursor-pointer font-medium list-none">
+          <span>本当に完全無料ですか？</span>
+          <i data-lucide="chevron-down" class="w-5 h-5 text-zinc-500 chev"></i>
+        </summary>
+        <p class="mt-4 text-sm text-zinc-400 leading-relaxed">
+          はい、ベータ版公開期間中はすべての機能を完全無料でご利用いただけます。クレジットカード登録も不要です。将来的に有料プランを導入する場合も、ベータ期間中にご利用いただいた方には特典をご用意します。
+        </p>
+      </details>
+      <details class="group p-5 rounded-xl bg-ink-800 border border-white/5 hover:border-white/10 transition">
+        <summary class="flex items-center justify-between cursor-pointer font-medium list-none">
+          <span>ベータ版のフィードバックは送れますか？</span>
+          <i data-lucide="chevron-down" class="w-5 h-5 text-zinc-500 chev"></i>
+        </summary>
+        <p class="mt-4 text-sm text-zinc-400 leading-relaxed">
+          大歓迎です。BetaLink 自身が「相互ベータテスト」プロダクトなので、皆さんのフィードバックを直接プロダクトに反映していきます。アプリ内の「BetaLinkを良くする」スレッドからお気軽にどうぞ。
+        </p>
+      </details>
+      <details class="group p-5 rounded-xl bg-ink-800 border border-white/5 hover:border-white/10 transition">
+        <summary class="flex items-center justify-between cursor-pointer font-medium list-none">
+          <span>「大衆オープン」と「マッチング」は両方使えますか？</span>
+          <i data-lucide="chevron-down" class="w-5 h-5 text-zinc-500 chev"></i>
+        </summary>
+        <p class="mt-4 text-sm text-zinc-400 leading-relaxed">
+          ひとつのプロジェクトで両方の枠を同時に設定できます。「まず大衆で 30 人、マッチング枠で 5 人」のような使い方が定番です。
+        </p>
+      </details>
+      <details class="group p-5 rounded-xl bg-ink-800 border border-white/5 hover:border-white/10 transition">
+        <summary class="flex items-center justify-between cursor-pointer font-medium list-none">
+          <span>クレジット制ってどういう仕組み？</span>
+          <i data-lucide="chevron-down" class="w-5 h-5 text-zinc-500 chev"></i>
+        </summary>
+        <p class="mt-4 text-sm text-zinc-400 leading-relaxed">
+          他の人のアプリをテストし、学びノートを投稿するとクレジットが貯まります。自分の募集を出すときにクレジットを使うと優先表示されたり、マッチング枠の開放数が増えたりします。「ギブ」する人が報われる設計です。
+        </p>
+      </details>
+      <details class="group p-5 rounded-xl bg-ink-800 border border-white/5 hover:border-white/10 transition">
+        <summary class="flex items-center justify-between cursor-pointer font-medium list-none">
+          <span>iOS / Android の両方に対応していますか？</span>
+          <i data-lucide="chevron-down" class="w-5 h-5 text-zinc-500 chev"></i>
+        </summary>
+        <p class="mt-4 text-sm text-zinc-400 leading-relaxed">
+          対応しています。TestFlight、Google Play Console、さらに Web アプリの URL 配布まで、ひとつの管理画面から扱えます。
+        </p>
+      </details>
+      <details class="group p-5 rounded-xl bg-ink-800 border border-white/5 hover:border-white/10 transition">
+        <summary class="flex items-center justify-between cursor-pointer font-medium list-none">
+          <span>勉強目的だけで使ってもいいですか？</span>
+          <i data-lucide="chevron-down" class="w-5 h-5 text-zinc-500 chev"></i>
+        </summary>
+        <p class="mt-4 text-sm text-zinc-400 leading-relaxed">
+          もちろんです。「インスピレーション閲覧」では募集中のアプリを見学できます。気に入ったらテストに参加 → 学びノート投稿でクレジットが貯まり、いずれ自分の作品を出すときに役立ちます。
+        </p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============== FINAL CTA ============== -->
+<section id="cta" class="relative z-10 py-24 sm:py-32 border-t border-white/5 overflow-hidden">
+  <div class="absolute inset-0 grid-bg radial-fade pointer-events-none opacity-50"></div>
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[300px] grad-bg opacity-20 blur-[100px] rounded-full"></div>
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
+    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-cyan-400/30 bg-cyan-400/10 text-xs text-cyan-300 mb-6">
+      <span class="text-[10px] font-bold tracking-wider">BETA</span>
+      <span>ベータ版公開中・完全無料</span>
+    </div>
+    <h2 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight">
+      ベータ版に、<br />
+      <span class="grad-text">今すぐ参加する。</span>
+    </h2>
+    <p class="mt-6 text-zinc-400 max-w-xl mx-auto leading-relaxed">
+      作る人も、試す人も、ベータ期間中はすべての機能が完全無料。<br class="hidden sm:inline" />
+      クレジットカード不要・3 分で登録。今夜、あなたのプロジェクトが動き出します。
+    </p>
+    <div class="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
+      <button data-login data-login-dest="post.html" class="grad-bg text-black font-semibold px-6 py-3.5 rounded-xl hover:opacity-90 transition flex items-center justify-center gap-2 glow">
+        <i data-lucide="rocket" class="w-4 h-4" aria-hidden="true"></i>
+        プロジェクトを投稿する
+      </button>
+      <button data-login data-login-dest="board.html" class="border border-white/15 bg-white/5 hover:bg-white/10 transition font-medium px-6 py-3.5 rounded-xl flex items-center justify-center gap-2">
+        <i data-lucide="book-open" class="w-4 h-4" aria-hidden="true"></i>
+        テスターとして勉強しに行く
+      </button>
+    </div>
+    <p class="mt-6 text-xs text-zinc-500">フィードバックは大歓迎です。BetaLink 自身も、皆さんと一緒にβテスト中です。</p>
+  </div>
+</section>
+
+<!-- ============== BOTTOM NAV (mobile only) ============== -->
+<nav id="bottomNav" aria-label="ボトムナビゲーション"
+     class="fixed bottom-0 inset-x-0 z-50 glass border-t border-white/10">
+  <div class="flex items-stretch h-16">
+
+    <!-- ホーム -->
+    <a href="#" id="bnHome"
+       class="bn-item flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="home" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">ホーム</span>
+    </a>
+
+    <!-- 掲示板 -->
+    <a href="board.html"
+       class="bn-item flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="layout-list" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">掲示板</span>
+    </a>
+
+    <!-- 投稿する（中央 CTA） -->
+    <div class="flex-1 flex items-center justify-center -mt-4">
+      <button data-login data-login-dest="post.html" aria-label="プロジェクトを投稿する"
+              class="w-14 h-14 rounded-2xl grad-bg text-black flex items-center justify-center shadow-lg glow">
+        <i data-lucide="plus" class="w-6 h-6" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <!-- 通知 -->
+    <button data-login data-login-dest="mypage.html"
+            class="bn-item flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="bell" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">通知</span>
+    </button>
+
+    <!-- マイページ -->
+    <a href="mypage.html"
+       class="bn-item flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="user" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">マイページ</span>
+    </a>
+
+  </div>
+</nav>
+
+<!-- ============== LOGIN MODAL ============== -->
+<div id="loginModal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
+  <!-- Backdrop -->
+  <div id="loginModalBackdrop" class="absolute inset-0 bg-black/75 backdrop-blur-sm"></div>
+  <!-- Panel -->
+  <div class="relative w-full max-w-sm">
+    <div class="grad-border p-px rounded-2xl">
+      <div class="rounded-2xl bg-ink-800 p-8 relative">
+        <!-- Close -->
+        <button id="loginModalClose" aria-label="閉じる" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-lg text-zinc-500 hover:text-white hover:bg-white/10 transition">
+          <i data-lucide="x" class="w-4 h-4" aria-hidden="true"></i>
+        </button>
+
+        <!-- Logo -->
+        <div class="flex justify-center mb-6">
+          <div class="w-12 h-12 rounded-xl grad-bg flex items-center justify-center">
+            <svg viewBox="0 0 32 32" class="w-10 h-10" aria-hidden="true">
+              <text x="16" y="23" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="800" font-size="20" fill="#0A0A0A">β</text>
+            </svg>
+          </div>
+        </div>
+
+        <h2 id="loginModalTitle" class="text-xl font-bold text-center mb-1">BetaLink に参加する</h2>
+        <p class="text-sm text-zinc-400 text-center mb-8">プロジェクトの投稿・テスト参加にはログインが必要です。</p>
+
+        <!-- Login options -->
+        <div>
+          <button id="modalGithubBtn" class="w-full flex items-center justify-center gap-3 px-4 py-3.5 rounded-xl bg-white/[0.06] border border-white/10 hover:bg-white/10 hover:border-white/20 transition font-medium text-sm">
+            <svg viewBox="0 0 24 24" class="w-5 h-5 flex-shrink-0" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.73.5.78 5.45.78 11.72c0 4.95 3.21 9.14 7.66 10.62.56.1.77-.24.77-.54v-1.88c-3.12.68-3.78-1.5-3.78-1.5-.51-1.3-1.25-1.65-1.25-1.65-1.02-.7.08-.68.08-.68 1.13.08 1.72 1.16 1.72 1.16 1 1.72 2.62 1.22 3.26.93.1-.72.39-1.22.71-1.5-2.49-.28-5.1-1.25-5.1-5.55 0-1.23.44-2.23 1.16-3.02-.12-.28-.5-1.43.11-2.98 0 0 .95-.3 3.11 1.16.9-.25 1.86-.37 2.82-.37.96 0 1.92.12 2.82.37 2.16-1.46 3.11-1.16 3.11-1.16.61 1.55.23 2.7.11 2.98.72.79 1.16 1.79 1.16 3.02 0 4.31-2.62 5.27-5.12 5.55.4.35.76 1.04.76 2.1v3.11c0 .3.2.65.78.54 4.45-1.48 7.66-5.67 7.66-10.62C23.22 5.45 18.27.5 12 .5Z"/></svg>
+            GitHub でログイン
+          </button>
+        </div>
+
+        <p class="mt-6 text-center text-xs text-zinc-500">
+          ログインすることで<a href="#" class="underline hover:text-zinc-300 transition">利用規約</a>と<a href="#" class="underline hover:text-zinc-300 transition">プライバシーポリシー</a>に同意したことになります。
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== FOOTER ============== -->
+<footer class="relative z-10 border-t border-white/5 py-12">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-10">
+      <div class="lg:col-span-2">
+        <a href="#" class="flex items-center gap-2 mb-4">
+          <div class="relative w-8 h-8 rounded-lg grad-bg flex items-center justify-center overflow-hidden">
+            <svg viewBox="0 0 32 32" class="w-8 h-8" aria-hidden="true">
+              <text x="16" y="23" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-weight="800" font-size="20" fill="#0A0A0A">β</text>
+              <circle cx="24" cy="9" r="2.5" fill="#0A0A0A"/>
+            </svg>
+          </div>
+          <span class="font-bold text-lg tracking-tight">BetaLink</span>
+        </a>
+        <p class="text-sm text-zinc-500 max-w-xs leading-relaxed">
+          日本の個人開発者と、新しいものに触れたいテスターをつなぐ。
+        </p>
+      </div>
+      <div>
+        <div class="text-xs uppercase tracking-widest text-zinc-500 mb-3">プロダクト</div>
+        <ul class="space-y-2 text-sm">
+          <li><a href="#features" class="text-zinc-400 hover:text-white transition">機能</a></li>
+          <li><a href="#how" class="text-zinc-400 hover:text-white transition">使い方</a></li>
+          <li><a href="#" class="text-zinc-400 hover:text-white transition">変更履歴</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="text-xs uppercase tracking-widest text-zinc-500 mb-3">リソース</div>
+        <ul class="space-y-2 text-sm">
+          <li><a href="#" class="text-zinc-400 hover:text-white transition">ブログ</a></li>
+          <li><a href="#" class="text-zinc-400 hover:text-white transition">ドキュメント</a></li>
+          <li><a href="#" class="text-zinc-400 hover:text-white transition">事例紹介</a></li>
+          <li><a href="#faq" class="text-zinc-400 hover:text-white transition">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="text-xs uppercase tracking-widest text-zinc-500 mb-3">運営</div>
+        <ul class="space-y-2 text-sm">
+          <li><a href="#" class="text-zinc-400 hover:text-white transition">会社概要</a></li>
+          <li><a href="#" class="text-zinc-400 hover:text-white transition">利用規約</a></li>
+          <li><a href="#" class="text-zinc-400 hover:text-white transition">プライバシー</a></li>
+          <li><a href="#" class="text-zinc-400 hover:text-white transition">お問い合わせ</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-6 border-t border-white/5">
+      <p class="text-xs text-zinc-500">© 2026 BetaLink Inc. All rights reserved.</p>
+      <div class="flex items-center gap-3">
+        <a href="#" aria-label="X (Twitter)" class="w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white hover:border-white/20 transition">
+          <svg viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="currentColor" aria-hidden="true"><path d="M18.244 2H21.5l-7.5 8.57L23 22h-6.84l-5.36-6.99L4.66 22H1.4l8.02-9.17L1 2h6.91l4.84 6.4L18.244 2Zm-2.4 18.04h1.9L7.27 3.86H5.25l10.594 16.18Z"/></svg>
+        </a>
+        <a href="#" aria-label="GitHub" class="w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white hover:border-white/20 transition">
+          <svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.73.5.78 5.45.78 11.72c0 4.95 3.21 9.14 7.66 10.62.56.1.77-.24.77-.54v-1.88c-3.12.68-3.78-1.5-3.78-1.5-.51-1.3-1.25-1.65-1.25-1.65-1.02-.7.08-.68.08-.68 1.13.08 1.72 1.16 1.72 1.16 1 1.72 2.62 1.22 3.26.93.1-.72.39-1.22.71-1.5-2.49-.28-5.1-1.25-5.1-5.55 0-1.23.44-2.23 1.16-3.02-.12-.28-.5-1.43.11-2.98 0 0 .95-.3 3.11 1.16.9-.25 1.86-.37 2.82-.37.96 0 1.92.12 2.82.37 2.16-1.46 3.11-1.16 3.11-1.16.61 1.55.23 2.7.11 2.98.72.79 1.16 1.79 1.16 3.02 0 4.31-2.62 5.27-5.12 5.55.4.35.76 1.04.76 2.1v3.11c0 .3.2.65.78.54 4.45-1.48 7.66-5.67 7.66-10.62C23.22 5.45 18.27.5 12 .5Z"/></svg>
+        </a>
+        <a href="#" aria-label="YouTube" class="w-8 h-8 rounded-lg border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white hover:border-white/20 transition">
+          <svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor" aria-hidden="true"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.12C19.6 3.6 12 3.6 12 3.6s-7.6 0-9.4.48A3 3 0 0 0 .5 6.2C.02 8.02 0 12 0 12s.02 3.98.5 5.8a3 3 0 0 0 2.1 2.12C4.4 20.4 12 20.4 12 20.4s7.6 0 9.4-.48a3 3 0 0 0 2.1-2.12c.48-1.82.5-5.8.5-5.8s-.02-3.98-.5-5.8ZM9.6 15.6V8.4l6.27 3.6L9.6 15.6Z"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="auth.js"></script>
+<script>
+  lucide.createIcons();
+  updateNavAuth();
+
+  // ============ Login Modal ============
+  (async function () {
+    const session  = await auth.getSession();
+    const modal    = document.getElementById('loginModal');
+    const backdrop = document.getElementById('loginModalBackdrop');
+    const closeBtn = document.getElementById('loginModalClose');
+    if (!modal) return;
+
+    function openModal() {
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      closeBtn.focus();
+    }
+    function closeModal() {
+      modal.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+
+    // ログイン済みなら行き先へ直接遷移、未ログインならモーダルを開く
+    document.querySelectorAll('[data-login]').forEach(el => {
+      el.addEventListener('click', () => {
+        if (session) {
+          window.location.href = el.dataset.loginDest || 'mypage.html';
+        } else {
+          openModal();
+        }
+      });
+    });
+
+    // モーダル内 GitHub ボタン
+    document.getElementById('modalGithubBtn')?.addEventListener('click', () => {
+      auth.signInWithGitHub();
+    });
+
+    closeBtn.addEventListener('click', closeModal);
+    backdrop.addEventListener('click', closeModal);
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+    });
+  })();
+
+  // ============ Navbar search ============
+  (function(){
+    const input = document.getElementById('navSearch');
+    const panel = document.getElementById('searchResults');
+    const list  = document.getElementById('searchList');
+    if (!input || !panel || !list) return;
+
+    // Collect projects from the LIVE BOARD section
+    const projects = Array.from(document.querySelectorAll('#board a.grid')).map(el => {
+      const title = el.querySelector('h4')?.textContent.trim() || '';
+      const desc  = el.querySelector('p')?.textContent.trim() || '';
+      const tags  = Array.from(el.querySelectorAll('span.font-mono')).map(s => s.textContent.trim()).filter(t => t && !t.startsWith('#'));
+      const author = (el.querySelector('img + span')?.textContent || '').trim();
+      return { title, desc, tags, author, el };
+    }).filter(p => p.title);
+
+    function render(query) {
+      const q = query.trim().toLowerCase();
+      const matches = q
+        ? projects.filter(p =>
+            p.title.toLowerCase().includes(q) ||
+            p.desc.toLowerCase().includes(q) ||
+            p.author.toLowerCase().includes(q) ||
+            p.tags.some(t => t.toLowerCase().includes(q)))
+        : projects.slice(0, 5);
+
+      if (!matches.length) {
+        list.innerHTML = `<li class="px-4 py-6 text-center text-sm text-zinc-500">「${query}」に一致するプロジェクトはありません</li>`;
+        return;
+      }
+      list.innerHTML = matches.map(p => `
+        <li>
+          <a href="#board" class="block px-4 py-3 hover:bg-white/5 transition">
+            <div class="flex items-center gap-2 flex-wrap mb-1">
+              ${p.tags.map(t => `<span class="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/20 font-mono">${t}</span>`).join('')}
+              <span class="font-semibold text-sm text-zinc-100">${p.title}</span>
+            </div>
+            <div class="text-xs text-zinc-500 truncate">${p.author} · ${p.desc || '募集中'}</div>
+          </a>
+        </li>
+      `).join('');
+    }
+
+    function open() {
+      panel.classList.remove('hidden');
+      input.setAttribute('aria-expanded', 'true');
+      panel.setAttribute('aria-expanded', 'true');
+      render(input.value);
+    }
+    function close() {
+      panel.classList.add('hidden');
+      input.setAttribute('aria-expanded', 'false');
+      panel.setAttribute('aria-expanded', 'false');
+    }
+
+    input.addEventListener('focus', open);
+    input.addEventListener('input', () => render(input.value));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { input.blur(); close(); }
+      if (e.key === 'Enter') { close(); document.getElementById('board')?.scrollIntoView({behavior:'smooth', block:'start'}); }
+    });
+    document.addEventListener('click', (e) => {
+      if (!panel.contains(e.target) && e.target !== input) close();
+    });
+    // Global "/" shortcut
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '/' && document.activeElement !== input && !/input|textarea/i.test(document.activeElement?.tagName || '')) {
+        e.preventDefault();
+        input.focus();
+      }
+    });
+  })();
+
+  // ============ Bottom Nav active state ============
+  (function () {
+    const sections = ['board', 'features', 'how', 'faq', 'cta'];
+    const homeItem = document.getElementById('bnHome');
+    const allItems = document.querySelectorAll('#bottomNav .bn-item');
+
+    function setActive(el) {
+      allItems.forEach(i => {
+        i.classList.remove('text-cyan-400');
+        i.classList.add('text-zinc-400');
+      });
+      if (el) {
+        el.classList.remove('text-zinc-400');
+        el.classList.add('text-cyan-400');
+      }
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const link = document.querySelector(`#bottomNav a[href="#${e.target.id}"]`);
+          setActive(link || homeItem);
+        }
+      });
+    }, { threshold: 0.4 });
+
+    sections.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    // デフォルトはホーム
+    setActive(homeItem);
+  })();
+
+  // ============ Scroll Reveal ============
+  (function () {
+    const css = `
+      .sr {
+        opacity: 0;
+        transform: translateY(32px);
+        transition: opacity .65s cubic-bezier(.22,.68,0,1.2), transform .65s cubic-bezier(.22,.68,0,1.2);
+      }
+      .sr.sr-in { opacity: 1; transform: none; }
+    `;
+    const tag = document.createElement('style');
+    tag.textContent = css;
+    document.head.appendChild(tag);
+
+    // アニメーションさせたい要素のセレクタ
+    const SELECTORS = [
+      // セクション見出し
+      'section h2',
+      // PROBLEM・FEATURES・TESTIMONIALS のカード
+      '#features .grid > div',
+      'section.py-20 .grid.sm\\:grid-cols-2.lg\\:grid-cols-4 > div',
+      'section .grid.md\\:grid-cols-3 > div',
+      // SOLUTION・FOR EVERYONE のカード
+      'section .grid.md\\:grid-cols-2 > div',
+      // HOW IT WORKS ステップ
+      '#how .grid > div',
+      // FAQ アイテム
+      '#faq details',
+      // FINAL CTA
+      '#cta h2',
+      '#cta p',
+      '#cta > div > div.mt-10',
+    ];
+
+    const seen = new WeakSet();
+    SELECTORS.forEach(sel => {
+      document.querySelectorAll(sel).forEach(el => {
+        if (seen.has(el)) return;
+        seen.add(el);
+
+        // 兄弟要素の中での順番でディレイを付けてスタガー
+        const siblings = Array.from(el.parentElement.children);
+        const idx = siblings.indexOf(el);
+        el.classList.add('sr');
+        el.style.transitionDelay = `${idx * 0.08}s`;
+      });
+    });
+
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('sr-in');
+          obs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.sr').forEach(el => obs.observe(el));
+  })();
+</script>
+</body>
+</html>

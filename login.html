@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ログイン — BetaLink</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="supabase-config.js"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: { extend: {
+      fontFamily: { sans: ['Inter','Noto Sans JP','system-ui','sans-serif'] },
+      colors: { ink: { 900:'#0A0A0A', 800:'#0F0F10', 700:'#161618' } }
+    }}
+  }
+</script>
+<style>
+  html { scroll-behavior:smooth; }
+  body { font-family:'Inter','Noto Sans JP',system-ui,sans-serif; background:#0A0A0A; color:#E4E4E7; -webkit-font-smoothing:antialiased; }
+  .grad-text { background:linear-gradient(135deg,#00D4FF 0%,#A855F7 100%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .grad-bg   { background:linear-gradient(135deg,#00D4FF 0%,#A855F7 100%); }
+  .grad-border::before {
+    content:''; position:absolute; inset:0; border-radius:inherit; padding:1px;
+    background:linear-gradient(135deg,rgba(0,212,255,.5),rgba(168,85,247,.5));
+    -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none;
+  }
+  .glow { box-shadow:0 0 40px -10px rgba(0,212,255,.4),0 0 80px -20px rgba(168,85,247,.3); }
+</style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+<!-- Ambient -->
+<div class="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+  <div class="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-cyan-500/10 blur-[120px]"></div>
+  <div class="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-purple-500/10 blur-[120px]"></div>
+</div>
+
+<!-- Header -->
+<header class="relative z-10 flex items-center justify-between px-6 py-5">
+  <a href="BetaLink.html" class="flex items-center gap-2 text-zinc-400 hover:text-white transition text-sm">
+    <i data-lucide="arrow-left" class="w-4 h-4" aria-hidden="true"></i>
+    トップに戻る
+  </a>
+  <a href="BetaLink.html" class="flex items-center gap-2">
+    <div class="w-8 h-8 rounded-lg grad-bg flex items-center justify-center">
+      <svg viewBox="0 0 32 32" class="w-8 h-8" aria-hidden="true">
+        <text x="16" y="23" text-anchor="middle" font-family="Inter,system-ui" font-weight="800" font-size="20" fill="#0A0A0A">β</text>
+      </svg>
+    </div>
+    <span class="font-bold tracking-tight">BetaLink</span>
+  </a>
+  <div class="w-24"></div>
+</header>
+
+<!-- Main -->
+<main class="relative z-10 flex-1 flex items-center justify-center px-4 py-12">
+  <div class="w-full max-w-sm">
+
+    <!-- Loading state -->
+    <div id="loadingState" class="text-center text-zinc-500 text-sm py-8">
+      <div class="w-6 h-6 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin mx-auto mb-3"></div>
+      確認中...
+    </div>
+
+    <!-- Card -->
+    <div id="loginCard" class="hidden relative grad-border rounded-2xl">
+      <div class="rounded-2xl bg-ink-800 p-8">
+
+        <!-- Logo -->
+        <div class="flex justify-center mb-6">
+          <div class="w-16 h-16 rounded-2xl grad-bg flex items-center justify-center glow">
+            <svg viewBox="0 0 32 32" class="w-12 h-12" aria-hidden="true">
+              <text x="16" y="23" text-anchor="middle" font-family="Inter,system-ui" font-weight="800" font-size="20" fill="#0A0A0A">β</text>
+            </svg>
+          </div>
+        </div>
+
+        <h1 class="text-2xl font-bold text-center mb-1">BetaLink にログイン</h1>
+        <p class="text-sm text-zinc-400 text-center mb-8">GitHub アカウントで続けてください。</p>
+
+        <!-- Alert -->
+        <div id="alert" class="hidden mb-4 px-4 py-3 rounded-xl text-sm border"></div>
+
+        <!-- GitHub OAuth -->
+        <button id="btnGitHub"
+          class="w-full flex items-center justify-center gap-3 px-4 py-3.5 rounded-xl bg-white/[0.06] border border-white/10 hover:bg-white/10 hover:border-white/20 transition font-medium text-sm mb-6">
+          <svg viewBox="0 0 24 24" class="w-5 h-5 flex-shrink-0" fill="currentColor" aria-hidden="true">
+            <path d="M12 .5C5.73.5.78 5.45.78 11.72c0 4.95 3.21 9.14 7.66 10.62.56.1.77-.24.77-.54v-1.88c-3.12.68-3.78-1.5-3.78-1.5-.51-1.3-1.25-1.65-1.25-1.65-1.02-.7.08-.68.08-.68 1.13.08 1.72 1.16 1.72 1.16 1 1.72 2.62 1.22 3.26.93.1-.72.39-1.22.71-1.5-2.49-.28-5.1-1.25-5.1-5.55 0-1.23.44-2.23 1.16-3.02-.12-.28-.5-1.43.11-2.98 0 0 .95-.3 3.11 1.16.9-.25 1.86-.37 2.82-.37.96 0 1.92.12 2.82.37 2.16-1.46 3.11-1.16 3.11-1.16.61 1.55.23 2.7.11 2.98.72.79 1.16 1.79 1.16 3.02 0 4.31-2.62 5.27-5.12 5.55.4.35.76 1.04.76 2.1v3.11c0 .3.2.65.78.54 4.45-1.48 7.66-5.67 7.66-10.62C23.22 5.45 18.27.5 12 .5Z"/>
+          </svg>
+          GitHub でログイン
+        </button>
+
+        <p class="text-center text-xs text-zinc-600">
+          <a href="#" class="underline hover:text-zinc-400 transition">利用規約</a> ·
+          <a href="#" class="underline hover:text-zinc-400 transition">プライバシーポリシー</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- Already logged in -->
+    <div id="alreadyIn" class="hidden text-center">
+      <p class="text-zinc-400 text-sm mb-4">すでにログイン済みです。</p>
+      <a href="mypage.html" class="inline-flex items-center gap-2 grad-bg text-black font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition glow text-sm">
+        マイページへ
+        <i data-lucide="arrow-right" class="w-4 h-4" aria-hidden="true"></i>
+      </a>
+    </div>
+
+  </div>
+</main>
+
+<script src="auth.js"></script>
+<script>
+lucide.createIcons();
+
+(async function () {
+  const loadingEl = document.getElementById('loadingState');
+  const cardEl    = document.getElementById('loginCard');
+  const alreadyEl = document.getElementById('alreadyIn');
+  const alertEl   = document.getElementById('alert');
+
+  const session = await auth.getSession();
+  loadingEl.classList.add('hidden');
+  if (session) {
+    alreadyEl.classList.remove('hidden');
+    return;
+  }
+  cardEl.classList.remove('hidden');
+
+  document.getElementById('btnGitHub').addEventListener('click', async () => {
+    showAlert('GitHub に接続中...', 'info');
+    try {
+      await auth.signInWithGitHub();
+    } catch (e) {
+      showAlert(e.message || 'エラーが発生しました', 'error');
+    }
+  });
+
+  function showAlert(msg, type) {
+    alertEl.textContent = msg;
+    alertEl.className = 'mb-4 px-4 py-3 rounded-xl text-sm border';
+    if (type === 'error') alertEl.classList.add('bg-red-500/10', 'border-red-500/30', 'text-red-300');
+    if (type === 'info')  alertEl.classList.add('bg-white/5',   'border-white/10',   'text-zinc-400');
+    alertEl.classList.remove('hidden');
+  }
+})();
+</script>
+</body>
+</html>

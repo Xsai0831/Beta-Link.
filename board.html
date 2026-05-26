@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>掲示板 — BetaLink</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="supabase-config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter','Noto Sans JP','system-ui','sans-serif'],
+          mono: ['JetBrains Mono','monospace']
+        },
+        colors: {
+          ink: { 900:'#0A0A0A', 800:'#0F0F10', 700:'#161618', 600:'#1C1C1F', 500:'#26262B', 400:'#3A3A42' }
+        }
+      }
+    }
+  }
+</script>
+<style>
+  html { scroll-behavior:smooth; }
+  body { font-family:'Inter','Noto Sans JP',system-ui,sans-serif; background:#0A0A0A; color:#E4E4E7; -webkit-font-smoothing:antialiased; }
+  .grad-text { background:linear-gradient(135deg,#00D4FF 0%,#A855F7 100%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .grad-bg   { background:linear-gradient(135deg,#00D4FF 0%,#A855F7 100%); }
+  .grad-border { position:relative; }
+  .grad-border::before {
+    content:''; position:absolute; inset:0; border-radius:inherit; padding:1px;
+    background:linear-gradient(135deg,rgba(0,212,255,.5),rgba(168,85,247,.5));
+    -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none;
+  }
+  .glass { background:rgba(15,15,16,.6); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+  .glow  { box-shadow:0 0 40px -10px rgba(0,212,255,.4),0 0 80px -20px rgba(168,85,247,.3); }
+  #bottomNav { padding-bottom:env(safe-area-inset-bottom,0px); }
+  .tag-ios     { background:rgba(0,212,255,.12); color:#67e8f9; border:1px solid rgba(0,212,255,.25); }
+  .tag-android { background:rgba(251,191,36,.1);  color:#fcd34d; border:1px solid rgba(251,191,36,.25); }
+  .tag-web     { background:rgba(52,211,153,.12); color:#6ee7b7; border:1px solid rgba(52,211,153,.25); }
+  .tag-ai      { background:rgba(168,85,247,.12); color:#d8b4fe; border:1px solid rgba(168,85,247,.25); }
+  .tag-saas    { background:rgba(148,163,184,.1); color:#cbd5e1; border:1px solid rgba(148,163,184,.25); }
+  .tag-urgent  { background:rgba(244,63,94,.12);  color:#fda4af; border:1px solid rgba(244,63,94,.25); }
+  .tag-match   { background:rgba(52,211,153,.12); color:#6ee7b7; border:1px solid rgba(52,211,153,.25); }
+  .tag-closed  { background:rgba(113,113,122,.1); color:#a1a1aa; border:1px solid rgba(113,113,122,.25); }
+</style>
+</head>
+<body class="bg-ink-900 text-zinc-200 antialiased overflow-x-hidden pb-16">
+
+<!-- Ambient -->
+<div class="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+  <div class="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-cyan-500/8 blur-[120px]"></div>
+  <div class="absolute top-1/2 -right-40 w-[400px] h-[400px] rounded-full bg-purple-500/8 blur-[120px]"></div>
+</div>
+
+<!-- Navbar -->
+<header class="fixed top-0 inset-x-0 z-50 glass border-b border-white/5">
+  <nav aria-label="メインナビゲーション" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-3">
+    <a href="BetaLink.html" class="flex items-center gap-2 flex-shrink-0">
+      <div class="w-8 h-8 rounded-lg grad-bg flex items-center justify-center">
+        <svg viewBox="0 0 32 32" class="w-8 h-8" aria-hidden="true">
+          <text x="16" y="23" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="800" font-size="20" fill="#0A0A0A">β</text>
+        </svg>
+      </div>
+      <span class="font-bold text-lg tracking-tight hidden sm:inline">BetaLink</span>
+    </a>
+
+    <!-- Search -->
+    <div class="flex-1 max-w-xl relative">
+      <div class="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/10 bg-white/[0.04] hover:bg-white/[0.06] focus-within:border-cyan-400/40 transition">
+        <i data-lucide="search" class="w-4 h-4 text-zinc-500 flex-shrink-0" aria-hidden="true"></i>
+        <input id="boardSearch" type="text" placeholder="プロジェクトを検索…" aria-label="プロジェクトを検索"
+          class="flex-1 bg-transparent text-sm placeholder:text-zinc-500 outline-none min-w-0" />
+      </div>
+    </div>
+
+    <div class="hidden md:flex items-center gap-6 text-sm text-zinc-400">
+      <a href="BetaLink.html" class="hover:text-white transition">ホーム</a>
+      <a href="board.html" class="text-white font-medium">掲示板</a>
+      <a href="post.html" class="hover:text-white transition">投稿する</a>
+      <a href="mypage.html" class="hover:text-white transition">マイページ</a>
+    </div>
+
+    <div class="flex items-center gap-2 flex-shrink-0">
+      <!-- ログイン前 -->
+      <a id="navLoginBtn" href="login.html" class="hidden sm:inline-flex items-center gap-1.5 text-sm text-zinc-300 hover:text-white border border-white/15 hover:border-white/25 transition px-3 py-2 rounded-lg">
+        ログイン
+      </a>
+      <a id="postBtnNavbar" href="login.html" class="grad-bg text-black font-semibold text-sm px-3 sm:px-4 py-2 rounded-lg hover:opacity-90 transition flex items-center gap-1.5 glow whitespace-nowrap">
+        <i data-lucide="plus" class="w-4 h-4 sm:hidden" aria-hidden="true"></i>
+        <span class="hidden sm:inline">プロジェクトを投稿</span>
+      </a>
+    </div>
+  </nav>
+</header>
+
+<!-- Main -->
+<main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12">
+
+  <!-- Page header -->
+  <div class="flex items-end justify-between flex-wrap gap-4 mb-8">
+    <div>
+      <div class="text-sm font-semibold grad-text mb-2">LIVE BOARD</div>
+      <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">募集中のプロジェクト</h1>
+    </div>
+    <a id="postBtnHeader" href="login.html" class="grad-bg text-black font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition flex items-center gap-2 glow text-sm">
+      <i data-lucide="plus" class="w-4 h-4" aria-hidden="true"></i>
+      投稿する
+    </a>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="flex flex-wrap items-center gap-2 mb-6">
+    <!-- Category -->
+    <div class="flex items-center gap-1 text-xs flex-wrap">
+      <button data-filter="all"     class="filter-btn active px-3 py-1.5 rounded-lg bg-white/10 text-white font-medium border border-white/10">すべて</button>
+      <button data-filter="ios"     class="filter-btn px-3 py-1.5 rounded-lg text-zinc-500 hover:text-zinc-200 border border-transparent hover:border-white/10 transition">iOS</button>
+      <button data-filter="android" class="filter-btn px-3 py-1.5 rounded-lg text-zinc-500 hover:text-zinc-200 border border-transparent hover:border-white/10 transition">Android</button>
+      <button data-filter="web"     class="filter-btn px-3 py-1.5 rounded-lg text-zinc-500 hover:text-zinc-200 border border-transparent hover:border-white/10 transition">Web</button>
+      <button data-filter="ai"      class="filter-btn px-3 py-1.5 rounded-lg text-zinc-500 hover:text-zinc-200 border border-transparent hover:border-white/10 transition">AI</button>
+      <button data-filter="saas"    class="filter-btn px-3 py-1.5 rounded-lg text-zinc-500 hover:text-zinc-200 border border-transparent hover:border-white/10 transition">SaaS</button>
+    </div>
+    <div class="flex-1"></div>
+    <!-- Sort -->
+    <div class="flex items-center gap-1 text-xs">
+      <button data-sort="new"    class="sort-btn active px-3 py-1.5 rounded-lg bg-white/10 text-white font-medium border border-white/10">最新</button>
+      <button data-sort="pop"    class="sort-btn px-3 py-1.5 rounded-lg text-zinc-500 hover:text-zinc-200 border border-transparent hover:border-white/10 transition">人気</button>
+      <button data-sort="urgent" class="sort-btn px-3 py-1.5 rounded-lg text-zinc-500 hover:text-zinc-200 border border-transparent hover:border-white/10 transition">急募</button>
+    </div>
+  </div>
+
+  <!-- Board -->
+  <div class="grad-border rounded-2xl">
+    <div class="rounded-2xl bg-ink-800 overflow-hidden divide-y divide-white/5" id="boardList">
+
+      <!-- JS で動的に挿入 -->
+      <div class="px-5 py-12 text-center text-zinc-500 text-sm animate-pulse" id="boardLoading">読み込み中…</div>
+
+    </div>
+  </div>
+
+  <!-- Footer bar -->
+  <div class="mt-4 flex items-center justify-between text-xs text-zinc-500">
+    <span id="countLabel">7件を表示中</span>
+    <button class="grad-text font-medium flex items-center gap-1">
+      もっと見る <i data-lucide="arrow-right" class="w-3.5 h-3.5" aria-hidden="true"></i>
+    </button>
+  </div>
+
+</main>
+
+<!-- Bottom Nav (mobile) -->
+<nav id="bottomNav" aria-label="ボトムナビゲーション"
+     class="fixed bottom-0 inset-x-0 z-50 glass border-t border-white/10">
+  <div class="flex items-stretch h-16">
+    <a href="BetaLink.html" class="bn-item flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="home" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">ホーム</span>
+    </a>
+    <a href="board.html" class="bn-item flex-1 flex flex-col items-center justify-center gap-0.5 text-cyan-400 pt-1">
+      <i data-lucide="layout-list" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">掲示板</span>
+    </a>
+    <div class="flex-1 flex items-center justify-center -mt-4">
+      <a id="postBtnNav" href="login.html" aria-label="プロジェクトを投稿する"
+         class="w-14 h-14 rounded-2xl grad-bg text-black flex items-center justify-center shadow-lg glow">
+        <i data-lucide="plus" class="w-6 h-6" aria-hidden="true"></i>
+      </a>
+    </div>
+    <a href="login.html" class="bn-item flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="bell" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">通知</span>
+    </a>
+    <a href="mypage.html" class="bn-item flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="user" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">マイページ</span>
+    </a>
+  </div>
+</nav>
+
+<script src="auth.js"></script>
+<script>
+lucide.createIcons();
+updateNavAuth();
+
+const searchEl  = document.getElementById('boardSearch');
+const countLbl  = document.getElementById('countLabel');
+const boardList = document.getElementById('boardList');
+
+let rows         = [];
+let activeFilter = 'all';
+let activeSort   = 'new';
+
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function applyFilter() {
+  const emptyEl = document.getElementById('emptyState');
+  const q = searchEl.value.trim().toLowerCase();
+  let visible = 0;
+  rows.forEach(row => {
+    const tags     = row.dataset.tags     || '';
+    const keywords = row.dataset.keywords || '';
+    const title    = row.querySelector('h2')?.textContent.toLowerCase() || '';
+    const desc     = row.querySelector('p.desc')?.textContent.toLowerCase() || '';
+    const matchF   = activeFilter === 'all' || tags.includes(activeFilter);
+    const matchS   = activeSort !== 'urgent' || row.dataset.urgent === 'true';
+    const matchQ   = !q || title.includes(q) || desc.includes(q) || tags.includes(q) || keywords.includes(q);
+    const show     = matchF && matchS && matchQ;
+    row.classList.toggle('hidden', !show);
+    if (show) visible++;
+  });
+  countLbl.textContent = `${visible}件を表示中`;
+  if (emptyEl) emptyEl.classList.toggle('hidden', visible > 0);
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.remove('bg-white/10','text-white','border-white/10');
+      b.classList.add('text-zinc-500','border-transparent');
+    });
+    btn.classList.add('bg-white/10','text-white','border-white/10');
+    btn.classList.remove('text-zinc-500','border-transparent');
+    activeFilter = btn.dataset.filter;
+    applyFilter();
+  });
+});
+
+document.querySelectorAll('.sort-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.sort-btn').forEach(b => {
+      b.classList.remove('bg-white/10','text-white','border-white/10');
+      b.classList.add('text-zinc-500','border-transparent');
+    });
+    btn.classList.add('bg-white/10','text-white','border-white/10');
+    btn.classList.remove('text-zinc-500','border-transparent');
+    activeSort = btn.dataset.sort;
+    applyFilter();
+  });
+});
+
+searchEl.addEventListener('input', applyFilter);
+
+// ---- タグ色マッピング ----
+const TAG_COLORS = {
+  iOS:'tag-ios', Android:'tag-android', Web:'tag-web',
+  AI:'tag-ai', SaaS:'tag-saas', ゲーム:'tag-saas', デザイン:'tag-saas', その他:'tag-saas'
+};
+
+function timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr);
+  const m = Math.floor(diff / 60000);
+  const h = Math.floor(diff / 3600000);
+  const d = Math.floor(diff / 86400000);
+  if (m < 1)  return 'たった今';
+  if (m < 60) return `${m}分前`;
+  if (h < 24) return `${h}時間前`;
+  if (d === 1) return '昨日';
+  return `${d}日前`;
+}
+
+// ---- 実データ読み込み ----
+(async function () {
+  const session  = await auth.getSession();
+  const myId     = session?.user?.id;
+  const postDest = session ? 'post.html' : 'login.html';
+
+  ['postBtnHeader','postBtnNavbar','postBtnNav'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.href = postDest;
+  });
+
+  const { data: projects, error } = await sb
+    .from('projects')
+    .select('*')
+    .eq('status', 'active')
+    .order('created_at', { ascending: false });
+
+  if (error || !projects?.length) {
+    boardList.innerHTML = `
+      <div class="px-5 py-16 text-center">
+        <p class="text-zinc-500 text-sm mb-3">現在募集中のプロジェクトはありません</p>
+        <a href="${postDest}" class="inline-flex items-center gap-1.5 text-sm grad-text font-medium">
+          最初のプロジェクトを投稿する →
+        </a>
+      </div>
+      <div id="emptyState" class="hidden px-5 py-16 text-center">
+        <p class="text-zinc-500 text-sm">条件に一致するプロジェクトが見つかりません</p>
+      </div>`;
+    countLbl.textContent = '0件を表示中';
+    return;
+  }
+
+  boardList.innerHTML = projects.map((p, i) => {
+    const isOwn    = myId && p.user_id === myId;
+    const tagsHtml = (p.tags || []).map(t =>
+      `<span class="text-[10px] px-1.5 py-0.5 rounded font-mono ${TAG_COLORS[t] || 'tag-saas'}">${esc(t)}</span>`
+    ).join('');
+    const ownBadge = isOwn
+      ? `<span class="text-[10px] px-1.5 py-0.5 rounded border border-cyan-400/50 text-cyan-300 bg-cyan-400/10 font-semibold">自分の投稿</span>`
+      : '';
+    const editBtn = isOwn
+      ? `<a href="post.html?id=${esc(p.id)}" class="text-xs text-zinc-400 hover:text-white border border-white/10 hover:border-white/20 px-3 py-1.5 rounded-lg transition flex-shrink-0">編集</a>`
+      : '';
+    const kwList = p.keywords
+      ? p.keywords.split(/[,、\s]+/).filter(Boolean).map(k =>
+          `<span class="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-500">${esc(k)}</span>`
+        ).join('')
+      : '';
+
+    return `
+      <div class="board-row grid grid-cols-12 gap-3 px-5 py-4 hover:bg-white/[0.03] transition items-start"
+           data-tags="${esc((p.tags || []).join(' ').toLowerCase())}"
+           data-urgent="false"
+           data-keywords="${esc((p.keywords || '').toLowerCase())}">
+        <div class="col-span-1 text-zinc-600 font-mono text-xs pt-1 hidden sm:block">#${String(i + 1).padStart(3,'0')}</div>
+        <div class="col-span-12 sm:col-span-7">
+          <div class="flex items-center gap-1.5 flex-wrap mb-1.5">
+            ${tagsHtml}${ownBadge}
+          </div>
+          <h2 class="font-semibold text-base mb-0.5">${esc(p.title)}</h2>
+          ${p.description ? `<p class="desc text-xs text-zinc-500 line-clamp-2">${esc(p.description)}</p>` : ''}
+          ${kwList ? `<div class="flex items-center gap-1 mt-1.5 flex-wrap">${kwList}</div>` : ''}
+        </div>
+        <div class="col-span-12 sm:col-span-4 flex items-center justify-between sm:justify-end gap-3 text-xs text-zinc-500">
+          <span class="flex items-center gap-1">
+            <i data-lucide="users" class="w-3.5 h-3.5" aria-hidden="true"></i>
+            ${p.current_count}/${p.target_count}
+          </span>
+          <span>${timeAgo(p.created_at)}</span>
+          ${editBtn}
+        </div>
+      </div>`;
+  }).join('') + `
+    <div id="emptyState" class="hidden px-5 py-16 text-center">
+      <i data-lucide="search-x" class="w-10 h-10 text-zinc-600 mx-auto mb-4" aria-hidden="true"></i>
+      <p class="text-zinc-500 text-sm">条件に一致するプロジェクトが見つかりません</p>
+    </div>`;
+
+  lucide.createIcons();
+  rows = Array.from(document.querySelectorAll('.board-row'));
+  countLbl.textContent = `${rows.length}件を表示中`;
+})();
+</script>
+</body>
+</html>
