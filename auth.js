@@ -1,6 +1,8 @@
 // Supabase クライアント（supabase-config.js より後に読み込むこと）
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+const ADMIN_ID = 'afd8c4fe-df72-479c-bf9c-03e986e7a038';
+
 const auth = {
   // ログイン中のセッションを取得
   getSession: async () => {

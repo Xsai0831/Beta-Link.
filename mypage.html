@@ -277,6 +277,13 @@ function esc(str) {
   document.getElementById('userNameEl').textContent = `@${username}`;
   document.getElementById('userEmail').textContent  = u.email || '';
 
+  if (u.id === ADMIN_ID) {
+    const badge = document.createElement('span');
+    badge.className = 'text-[10px] font-bold px-1.5 py-0.5 rounded border border-yellow-400/50 text-yellow-300 bg-yellow-400/10';
+    badge.textContent = '👑 管理者';
+    document.getElementById('userNameEl').after(badge);
+  }
+
   // ログアウト
   document.getElementById('signOutBtn').addEventListener('click', () => auth.signOut());
 
