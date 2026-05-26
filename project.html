@@ -16,20 +16,20 @@
     darkMode: 'class',
     theme: { extend: {
       fontFamily: { sans: ['Inter','Noto Sans JP','system-ui','sans-serif'] },
-      colors: { ink: { 900:'#0A0A0A', 800:'#0F0F10', 700:'#161618' } }
+      colors: { ink: { 900:'#0A0A0A', 800:'#0F0F10', 700:'#161618', 600:'#1C1C1F' } }
     }}
   }
 </script>
 <style>
-  html { scroll-behavior:smooth; }
+  html,body { height:100%; }
   body { font-family:'Inter','Noto Sans JP',system-ui,sans-serif; background:#0A0A0A; color:#E4E4E7; -webkit-font-smoothing:antialiased; }
   .grad-text { background:linear-gradient(135deg,#00D4FF 0%,#A855F7 100%); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .grad-bg   { background:linear-gradient(135deg,#00D4FF 0%,#A855F7 100%); }
-  .glass { background:rgba(15,15,16,.6); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
-  .glow  { box-shadow:0 0 40px -10px rgba(0,212,255,.4),0 0 80px -20px rgba(168,85,247,.3); }
+  .glass { background:rgba(15,15,16,.7); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); }
+  .glow  { box-shadow:0 0 40px -10px rgba(0,212,255,.35),0 0 80px -20px rgba(168,85,247,.25); }
   .grad-border::before {
     content:''; position:absolute; inset:0; border-radius:inherit; padding:1px;
-    background:linear-gradient(135deg,rgba(0,212,255,.4),rgba(168,85,247,.4));
+    background:linear-gradient(135deg,rgba(0,212,255,.35),rgba(168,85,247,.35));
     -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
     -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none;
   }
@@ -38,14 +38,17 @@
   .tag-web     { background:rgba(168,85,247,.08); color:#c084fc; border:1px solid rgba(168,85,247,.2); }
   .tag-ai      { background:rgba(251,146,60,.08);  color:#fca86e; border:1px solid rgba(251,146,60,.2); }
   .tag-saas    { background:rgba(250,204,21,.08);  color:#facc15; border:1px solid rgba(250,204,21,.2); }
-  #bottomNav { padding-bottom:env(safe-area-inset-bottom,0px); }
+  #bottomNav   { padding-bottom:env(safe-area-inset-bottom,0px); }
+  #msgList     { scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.1) transparent; }
+  #msgList::-webkit-scrollbar { width:4px; }
+  #msgList::-webkit-scrollbar-thumb { background:rgba(255,255,255,.1); border-radius:4px; }
   textarea { resize:none; }
-  textarea::placeholder { color:#52525b; }
-  .step-line { flex:1; height:1px; background:rgba(255,255,255,.08); }
-  .step-line.active { background:linear-gradient(90deg,#00D4FF,#A855F7); }
+  .msg-input { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:.75rem; padding:.65rem 1rem; color:#E4E4E7; font-size:.875rem; outline:none; transition:border-color .15s; width:100%; }
+  .msg-input:focus { border-color:rgba(0,212,255,.4); }
+  .msg-input::placeholder { color:#52525b; }
 </style>
 </head>
-<body class="min-h-screen pb-24">
+<body class="min-h-screen pb-20">
 
 <div class="pointer-events-none fixed inset-0 z-0 overflow-hidden">
   <div class="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-cyan-500/8 blur-[120px]"></div>
@@ -83,19 +86,18 @@
     <a href="board.html" class="text-sm grad-text font-medium">掲示板に戻る →</a>
   </div>
 
-  <!-- Content -->
   <div id="contentEl" class="hidden space-y-5">
 
-    <!-- Project card -->
+    <!-- Project info -->
     <div class="relative grad-border rounded-2xl">
       <div class="rounded-2xl bg-ink-800 p-6 sm:p-8">
-        <div id="tagsEl" class="flex items-center gap-1.5 flex-wrap mb-4"></div>
+        <div id="tagsEl" class="flex flex-wrap gap-1.5 mb-4"></div>
         <h1 id="titleEl" class="text-2xl sm:text-3xl font-bold mb-3 leading-snug"></h1>
         <p id="descEl" class="text-zinc-400 text-sm leading-relaxed mb-5"></p>
-        <div id="kwWrap" class="hidden mb-5">
+        <div id="kwWrap" class="hidden flex-wrap gap-1.5 mb-5">
           <div id="kwEl" class="flex gap-1.5 flex-wrap"></div>
         </div>
-        <div class="flex items-center gap-5 text-sm text-zinc-500 pt-5 border-t border-white/5">
+        <div class="flex flex-wrap items-center gap-5 text-sm text-zinc-500 pt-5 border-t border-white/5">
           <span class="flex items-center gap-1.5">
             <i data-lucide="users" class="w-4 h-4"></i>
             <span id="countEl"></span>
@@ -104,17 +106,75 @@
             <i data-lucide="clock" class="w-4 h-4"></i>
             <span id="timeEl"></span>
           </span>
+          <span id="urlBtnWrap" class="hidden">
+            <a id="urlBtn" href="#" target="_blank" rel="noopener"
+              class="flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 transition font-medium">
+              <i data-lucide="external-link" class="w-3.5 h-3.5"></i> 作品を開く
+            </a>
+          </span>
         </div>
       </div>
     </div>
 
-    <!-- Participation area -->
-    <div id="participationEl" class="rounded-2xl bg-ink-800 border border-white/5 p-6 sm:p-8"></div>
+    <!-- Join area (非参加者向け) -->
+    <div id="joinArea" class="hidden rounded-2xl bg-ink-800 border border-white/5 p-6 sm:p-8">
+      <div id="joinContent"></div>
+    </div>
 
-    <!-- Feedback list -->
+    <!-- Chat room (参加者 + 開発者向け) -->
+    <div id="chatArea" class="hidden rounded-2xl bg-ink-800 border border-white/5 overflow-hidden">
+
+      <!-- Chat header -->
+      <div class="flex items-center justify-between px-5 py-4 border-b border-white/5">
+        <div class="flex items-center gap-2">
+          <i data-lucide="message-circle" class="w-4 h-4 text-cyan-400"></i>
+          <span class="text-sm font-semibold">チャットルーム</span>
+          <span class="text-xs text-zinc-600">（参加者限定）</span>
+        </div>
+        <button id="feedbackBtn"
+          class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-purple-400/30 text-purple-300 hover:bg-purple-400/10 transition font-medium">
+          <i data-lucide="star" class="w-3.5 h-3.5"></i>
+          フィードバックを送る
+        </button>
+      </div>
+
+      <!-- Feedback form (inline, hidden by default) -->
+      <div id="feedbackFormWrap" class="hidden px-5 py-4 border-b border-white/5 bg-purple-500/5">
+        <p class="text-xs text-zinc-500 mb-2">アプリを使った感想・改善点などを書いてください（公開されます）</p>
+        <textarea id="feedbackInput" rows="3" maxlength="500"
+          class="msg-input mb-2"
+          placeholder="例：UIがシンプルで使いやすかった。通知機能があると嬉しいです。"></textarea>
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-zinc-600"><span id="fbCharCount">0</span>/500</span>
+          <div class="flex gap-2">
+            <button id="cancelFbBtn" class="text-xs px-3 py-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 transition">キャンセル</button>
+            <button id="submitFbBtn" class="text-xs px-4 py-1.5 rounded-lg grad-bg text-black font-bold hover:opacity-90 transition">送信する</button>
+          </div>
+        </div>
+        <div id="fbAlert" class="hidden mt-2 text-xs text-red-400"></div>
+      </div>
+
+      <!-- Messages -->
+      <div id="msgList" class="h-80 overflow-y-auto px-5 py-4 space-y-4 flex flex-col">
+        <div id="msgEmpty" class="flex-1 flex items-center justify-center text-zinc-600 text-sm">
+          まだメッセージはありません。最初のメッセージを送ってみよう！
+        </div>
+      </div>
+
+      <!-- Message input -->
+      <div class="px-4 py-3 border-t border-white/5 flex gap-2 items-end">
+        <textarea id="msgInput" rows="1" class="msg-input flex-1" placeholder="メッセージを入力…" maxlength="500"></textarea>
+        <button id="sendBtn"
+          class="w-9 h-9 flex-shrink-0 grad-bg rounded-xl flex items-center justify-center text-black hover:opacity-90 transition glow">
+          <i data-lucide="send" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Public feedback -->
     <div id="feedbackSection" class="hidden rounded-2xl bg-ink-800 border border-white/5 p-6 sm:p-8">
       <div class="flex items-center justify-between mb-5">
-        <h2 class="font-semibold text-sm text-zinc-300">テスターのフィードバック</h2>
+        <h2 class="font-semibold text-sm">公開フィードバック</h2>
         <span id="feedbackCount" class="text-xs text-zinc-600"></span>
       </div>
       <div id="feedbackList" class="space-y-4"></div>
@@ -127,12 +187,10 @@
 <nav id="bottomNav" class="fixed bottom-0 inset-x-0 z-50 glass border-t border-white/10">
   <div class="flex items-stretch h-16">
     <a href="BetaLink.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
-      <i data-lucide="home" class="w-5 h-5"></i>
-      <span class="text-[10px] font-medium">ホーム</span>
+      <i data-lucide="home" class="w-5 h-5"></i><span class="text-[10px] font-medium">ホーム</span>
     </a>
     <a href="board.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-cyan-400 pt-1">
-      <i data-lucide="layout-list" class="w-5 h-5"></i>
-      <span class="text-[10px] font-medium">掲示板</span>
+      <i data-lucide="layout-list" class="w-5 h-5"></i><span class="text-[10px] font-medium">掲示板</span>
     </a>
     <div class="flex-1 flex items-center justify-center -mt-4">
       <a href="post.html" class="w-14 h-14 rounded-2xl grad-bg text-black flex items-center justify-center shadow-lg glow">
@@ -140,12 +198,10 @@
       </a>
     </div>
     <a href="login.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
-      <i data-lucide="bell" class="w-5 h-5"></i>
-      <span class="text-[10px] font-medium">通知</span>
+      <i data-lucide="bell" class="w-5 h-5"></i><span class="text-[10px] font-medium">通知</span>
     </a>
     <a href="mypage.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
-      <i data-lucide="user" class="w-5 h-5"></i>
-      <span class="text-[10px] font-medium">マイページ</span>
+      <i data-lucide="user" class="w-5 h-5"></i><span class="text-[10px] font-medium">マイページ</span>
     </a>
   </div>
 </nav>
@@ -172,219 +228,204 @@ function timeAgo(d) {
   return `${day}日前`;
 }
 
-function stepBar(active) {
-  const steps = ['参加する','体験する','感想を書く'];
-  return `
-    <div class="flex items-center gap-2 mb-6">
-      ${steps.map((s, i) => `
-        <div class="flex items-center gap-2 ${i < steps.length - 1 ? 'flex-1' : ''}">
-          <div class="flex items-center gap-1.5 flex-shrink-0">
-            <div class="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0
-              ${i < active ? 'bg-cyan-400 text-black' : i === active ? 'grad-bg text-black' : 'bg-white/10 text-zinc-500'}">
-              ${i < active ? '✓' : i + 1}
-            </div>
-            <span class="text-[11px] ${i <= active ? 'text-zinc-300' : 'text-zinc-600'} hidden sm:inline">${s}</span>
-          </div>
-          ${i < steps.length - 1 ? `<div class="step-line ${i < active ? 'active' : ''}"></div>` : ''}
-        </div>
-      `).join('')}
-    </div>`;
-}
+let project = null;
+let mySession = null;
+let isOwner = false;
+const sentMsgIds = new Set();
 
-function renderParticipation(p, session, alreadyJoined, currentCount) {
-  const el = document.getElementById('participationEl');
-  const isOwn = session && p.user_id === session.user.id;
-  const isClosed = p.status === 'closed';
+function renderMessage(msg, scroll = true) {
+  const listEl = document.getElementById('msgList');
+  const emptyEl = document.getElementById('msgEmpty');
+  if (emptyEl) emptyEl.remove();
 
-  if (isClosed) {
-    el.innerHTML = `
-      <div class="flex items-center gap-2 text-zinc-500 text-sm">
-        <i data-lucide="lock" class="w-4 h-4"></i> この募集はクローズしました
-      </div>`;
-    lucide.createIcons();
-    return;
-  }
+  const isMine = msg.user_id === mySession?.user?.id;
+  const isProjectOwner = project && msg.user_id === project.user_id;
 
-  if (isOwn) {
-    el.innerHTML = `
-      <div class="flex items-center justify-between flex-wrap gap-3">
-        <span class="text-sm text-zinc-500">自分のプロジェクトです</span>
-        <a href="post.html?id=${esc(p.id)}" class="text-sm border border-white/10 hover:border-white/20 px-4 py-2 rounded-xl text-zinc-300 hover:text-white transition">編集する</a>
-      </div>`;
-    lucide.createIcons();
-    return;
-  }
-
-  if (!session) {
-    el.innerHTML = `
-      ${stepBar(0)}
-      <p class="text-sm text-zinc-500 mb-4">テストに参加するには GitHub ログインが必要です。</p>
-      <a href="login.html" class="inline-flex items-center gap-2 grad-bg text-black font-bold px-6 py-3.5 rounded-xl hover:opacity-90 transition glow text-sm">
-        <i data-lucide="github" class="w-4 h-4"></i> ログインして参加する
-      </a>`;
-    lucide.createIcons();
-    return;
-  }
-
-  if (alreadyJoined) {
-    el.innerHTML = `
-      ${stepBar(3)}
-      <div class="flex items-center gap-2 text-emerald-400 font-semibold text-sm mb-3">
-        <i data-lucide="check-circle" class="w-5 h-5"></i> 参加済みです
+  const div = document.createElement('div');
+  div.className = 'flex gap-3 items-start';
+  div.innerHTML = `
+    <img src="${esc(msg.avatar_url) || `https://api.dicebear.com/7.x/initials/svg?seed=${esc(msg.username)}`}"
+      class="w-8 h-8 rounded-full flex-shrink-0 bg-zinc-800 object-cover" alt="" />
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-1.5 mb-1 flex-wrap">
+        <span class="text-xs font-semibold ${isMine ? 'text-cyan-300' : 'text-zinc-300'}">@${esc(msg.username)}</span>
+        ${isProjectOwner ? '<span class="text-[10px] px-1.5 py-0.5 rounded border border-yellow-400/40 text-yellow-300 bg-yellow-400/10 font-semibold">開発者</span>' : ''}
+        ${msg.user_id === ADMIN_ID ? '<span class="text-[10px] px-1.5 py-0.5 rounded border border-yellow-400/40 text-yellow-300 bg-yellow-400/10 font-semibold">管理者</span>' : ''}
+        <span class="text-[11px] text-zinc-600">${timeAgo(msg.created_at)}</span>
       </div>
-      ${p.url ? `<a href="${esc(p.url)}" target="_blank" rel="noopener"
-        class="inline-flex items-center gap-2 text-sm border border-white/10 hover:border-white/20 px-4 py-2 rounded-xl text-zinc-300 hover:text-white transition">
-        <i data-lucide="external-link" class="w-4 h-4"></i> 作品をもう一度開く
-      </a>` : ''}`;
-    lucide.createIcons();
-    return;
-  }
-
-  // Step 1: 参加ボタン
-  el.innerHTML = `
-    ${stepBar(0)}
-    <p class="text-sm text-zinc-400 mb-5">作品を実際に使って、フィードバックを送ってください。</p>
-    <button id="startBtn" class="inline-flex items-center gap-2 grad-bg text-black font-bold px-7 py-3.5 rounded-xl hover:opacity-90 transition glow text-sm">
-      <i data-lucide="rocket" class="w-4 h-4"></i> テストに参加する
-    </button>`;
-  lucide.createIcons();
-
-  document.getElementById('startBtn').addEventListener('click', () => {
-    if (p.url) window.open(p.url, '_blank', 'noopener');
-    renderFeedbackForm(p, currentCount);
-  });
-}
-
-function renderFeedbackForm(p, currentCount) {
-  const el = document.getElementById('participationEl');
-  el.innerHTML = `
-    ${stepBar(1)}
-    ${p.url ? `
-      <a href="${esc(p.url)}" target="_blank" rel="noopener"
-        class="flex items-center justify-between gap-3 p-4 rounded-xl border border-cyan-400/30 bg-cyan-400/5 hover:bg-cyan-400/10 transition mb-6 group">
-        <span class="text-sm font-medium text-cyan-300">作品を開く</span>
-        <i data-lucide="external-link" class="w-4 h-4 text-cyan-400 group-hover:translate-x-0.5 transition-transform"></i>
-      </a>` : ''}
-    <div class="mb-2">
-      <label class="block text-sm font-medium text-zinc-300 mb-1">フィードバック <span class="text-red-400">*</span></label>
-      <p class="text-xs text-zinc-600 mb-3">使ってみた感想・改善点・良かった点などを書いてください。公開されます。</p>
-      <textarea id="feedbackInput" rows="4" maxlength="500"
-        class="w-full bg-white/[0.04] border border-white/10 rounded-xl px-4 py-3 text-sm text-zinc-200 outline-none focus:border-cyan-400/40 transition"
-        placeholder="例：UIがシンプルで使いやすかったです。ダークモードがあるとさらに良いと思います。"></textarea>
-      <div class="text-right text-xs text-zinc-600 mt-1"><span id="charCount">0</span>/500</div>
-    </div>
-    <div id="fbAlert" class="hidden mb-3 px-3 py-2 rounded-lg text-xs bg-red-500/10 border border-red-500/20 text-red-300"></div>
-    <button id="submitFbBtn" class="w-full grad-bg text-black font-bold py-3.5 rounded-xl hover:opacity-90 transition glow text-sm flex items-center justify-center gap-2">
-      <i data-lucide="send" class="w-4 h-4"></i> 参加を完了する
-    </button>`;
-  lucide.createIcons();
-
-  const textarea = document.getElementById('feedbackInput');
-  const charCount = document.getElementById('charCount');
-  textarea.addEventListener('input', () => { charCount.textContent = textarea.value.length; });
-
-  document.getElementById('submitFbBtn').addEventListener('click', async () => {
-    const fb = textarea.value.trim();
-    const alertEl = document.getElementById('fbAlert');
-    if (!fb) {
-      alertEl.textContent = 'フィードバックを入力してください';
-      alertEl.classList.remove('hidden');
-      textarea.focus();
-      return;
-    }
-    alertEl.classList.add('hidden');
-
-    const btn = document.getElementById('submitFbBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="opacity-60">送信中...</span>';
-
-    const { data, error } = await sb.rpc('join_project', { proj_id: p.id, feedback_text: fb });
-
-    if (error || data?.error) {
-      btn.disabled = false;
-      btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> 参加を完了する';
-      lucide.createIcons();
-      alertEl.textContent = error?.message || 'エラーが発生しました';
-      alertEl.classList.remove('hidden');
-      return;
-    }
-
-    renderDone(p, fb, currentCount);
-    loadFeedback(p.id);
-  });
-}
-
-function renderDone(p, fb, currentCount) {
-  const el = document.getElementById('participationEl');
-  el.innerHTML = `
-    ${stepBar(3)}
-    <div class="flex items-center gap-2 text-emerald-400 font-semibold text-sm mb-2">
-      <i data-lucide="check-circle" class="w-5 h-5"></i> 参加完了！ +2クレジット獲得
-    </div>
-    <p class="text-xs text-zinc-500 mb-4">フィードバックを送信しました。ありがとうございます！</p>
-    ${p.url ? `<a href="${esc(p.url)}" target="_blank" rel="noopener"
-      class="inline-flex items-center gap-2 text-sm border border-white/10 hover:border-white/20 px-4 py-2 rounded-xl text-zinc-300 hover:text-white transition">
-      <i data-lucide="external-link" class="w-4 h-4"></i> 作品をもう一度開く
-    </a>` : ''}`;
-  document.getElementById('countEl').textContent = `${currentCount + 1}/${p.target_count} 人参加`;
-  lucide.createIcons();
+      <p class="text-sm text-zinc-300 leading-relaxed break-words">${esc(msg.content)}</p>
+    </div>`;
+  listEl.appendChild(div);
+  if (scroll) listEl.scrollTop = listEl.scrollHeight;
 }
 
 async function loadFeedback(projectId) {
-  const { data: feedbacks } = await sb.from('test_history')
+  const { data } = await sb.from('test_history')
     .select('feedback, created_at')
     .eq('project_id', projectId)
     .not('feedback', 'is', null)
     .neq('feedback', '')
     .order('created_at', { ascending: false });
 
-  if (!feedbacks?.length) return;
+  if (!data?.length) return;
 
-  const section = document.getElementById('feedbackSection');
-  const list = document.getElementById('feedbackList');
-  document.getElementById('feedbackCount').textContent = `${feedbacks.length}件`;
-
-  list.innerHTML = feedbacks.map(f => `
+  document.getElementById('feedbackCount').textContent = `${data.length}件`;
+  document.getElementById('feedbackList').innerHTML = data.map(f => `
     <div class="flex gap-3 pb-4 border-b border-white/5 last:border-0 last:pb-0">
-      <div class="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-        <i data-lucide="message-circle" class="w-3.5 h-3.5 text-zinc-500"></i>
+      <div class="w-7 h-7 rounded-full bg-white/8 flex items-center justify-center flex-shrink-0 mt-0.5">
+        <i data-lucide="message-square" class="w-3.5 h-3.5 text-zinc-500"></i>
       </div>
       <div class="flex-1 min-w-0">
         <p class="text-sm text-zinc-300 leading-relaxed mb-1">${esc(f.feedback)}</p>
         <span class="text-xs text-zinc-600">${timeAgo(f.created_at)}</span>
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
 
   lucide.createIcons();
-  section.classList.remove('hidden');
+  document.getElementById('feedbackSection').classList.remove('hidden');
+}
+
+function setupChat(projectId, session) {
+  // Load existing messages
+  sb.from('messages')
+    .select('*')
+    .eq('project_id', projectId)
+    .order('created_at', { ascending: true })
+    .then(({ data }) => {
+      (data || []).forEach(m => renderMessage(m, false));
+      const list = document.getElementById('msgList');
+      list.scrollTop = list.scrollHeight;
+    });
+
+  // Realtime subscription
+  sb.channel(`chat-${projectId}`)
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'messages',
+      filter: `project_id=eq.${projectId}`
+    }, payload => {
+      if (sentMsgIds.has(payload.new.id)) return;
+      renderMessage(payload.new, true);
+    })
+    .subscribe();
+
+  // Send message
+  async function sendMessage() {
+    const input = document.getElementById('msgInput');
+    const content = input.value.trim();
+    if (!content) return;
+    input.value = '';
+    input.style.height = 'auto';
+
+    const u = session.user;
+    const username = u.user_metadata?.user_name || u.email?.split('@')[0] || 'user';
+    const avatar_url = u.user_metadata?.avatar_url || '';
+
+    const { data: msg, error } = await sb.from('messages').insert({
+      project_id: projectId,
+      user_id: u.id,
+      username,
+      avatar_url,
+      content
+    }).select().single();
+
+    if (!error && msg) {
+      sentMsgIds.add(msg.id);
+      renderMessage(msg, true);
+    }
+  }
+
+  document.getElementById('sendBtn').addEventListener('click', sendMessage);
+  document.getElementById('msgInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+  document.getElementById('msgInput').addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  });
+}
+
+function setupFeedback(projectId, myFeedback) {
+  const btn = document.getElementById('feedbackBtn');
+  const wrap = document.getElementById('feedbackFormWrap');
+  const input = document.getElementById('feedbackInput');
+  const charCount = document.getElementById('fbCharCount');
+  const alertEl = document.getElementById('fbAlert');
+
+  if (myFeedback) {
+    btn.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i> 送信済み';
+    btn.disabled = true;
+    btn.classList.add('opacity-50');
+    lucide.createIcons();
+    return;
+  }
+
+  btn.addEventListener('click', () => {
+    wrap.classList.toggle('hidden');
+    if (!wrap.classList.contains('hidden')) input.focus();
+    lucide.createIcons();
+  });
+
+  document.getElementById('cancelFbBtn').addEventListener('click', () => {
+    wrap.classList.add('hidden');
+    alertEl.classList.add('hidden');
+  });
+
+  input.addEventListener('input', () => { charCount.textContent = input.value.length; });
+
+  document.getElementById('submitFbBtn').addEventListener('click', async () => {
+    const text = input.value.trim();
+    if (!text) { alertEl.textContent = 'フィードバックを入力してください'; alertEl.classList.remove('hidden'); return; }
+    alertEl.classList.add('hidden');
+
+    const submitBtn = document.getElementById('submitFbBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = '送信中...';
+
+    const { error } = await sb.rpc('submit_feedback', { proj_id: projectId, feedback_text: text });
+
+    if (error) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '送信する';
+      alertEl.textContent = 'エラー: ' + error.message;
+      alertEl.classList.remove('hidden');
+      return;
+    }
+
+    wrap.classList.add('hidden');
+    btn.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i> 送信済み';
+    btn.disabled = true;
+    btn.classList.add('opacity-50');
+    lucide.createIcons();
+    loadFeedback(projectId);
+  });
 }
 
 (async function () {
   const id = new URLSearchParams(window.location.search).get('id');
   if (!id) { show('notFoundEl'); return; }
 
-  const session = await auth.getSession();
-  const myId = session?.user?.id;
+  mySession = await auth.getSession();
+  const myId = mySession?.user?.id;
 
   const { data: p, error } = await sb.from('projects').select('*').eq('id', id).single();
   if (error || !p) { show('notFoundEl'); return; }
 
+  project = p;
   document.title = `${p.title} — BetaLink`;
 
-  // Tags
+  // Tags & badges
   const tagsEl = document.getElementById('tagsEl');
   (p.tags || []).forEach(t => {
-    const span = document.createElement('span');
-    span.className = `text-[11px] px-2 py-0.5 rounded font-mono ${TAG_COLORS[t] || 'tag-saas'}`;
-    span.textContent = t;
-    tagsEl.appendChild(span);
+    const s = document.createElement('span');
+    s.className = `text-[11px] px-2 py-0.5 rounded font-mono ${TAG_COLORS[t] || 'tag-saas'}`;
+    s.textContent = t;
+    tagsEl.appendChild(s);
   });
   if (p.user_id === ADMIN_ID) {
-    const badge = document.createElement('span');
-    badge.className = 'text-[11px] px-2 py-0.5 rounded border border-yellow-400/50 text-yellow-300 bg-yellow-400/10 font-semibold';
-    badge.textContent = '管理者';
-    tagsEl.appendChild(badge);
+    const b = document.createElement('span');
+    b.className = 'text-[11px] px-2 py-0.5 rounded border border-yellow-400/50 text-yellow-300 bg-yellow-400/10 font-semibold';
+    b.textContent = '管理者';
+    tagsEl.appendChild(b);
   }
 
   document.getElementById('titleEl').textContent = p.title;
@@ -392,26 +433,105 @@ async function loadFeedback(projectId) {
   document.getElementById('countEl').textContent = `${p.current_count}/${p.target_count} 人参加`;
   document.getElementById('timeEl').textContent = timeAgo(p.created_at);
 
+  if (p.url) {
+    document.getElementById('urlBtn').href = p.url;
+    document.getElementById('urlBtnWrap').classList.remove('hidden');
+  }
+
   if (p.keywords) {
     const kws = p.keywords.split(/[,、\s]+/).filter(Boolean);
     if (kws.length) {
-      document.getElementById('kwWrap').classList.remove('hidden');
+      const kwWrap = document.getElementById('kwWrap');
+      kwWrap.classList.remove('hidden');
+      kwWrap.classList.add('flex');
       document.getElementById('kwEl').innerHTML = kws.map(k =>
-        `<span class="text-[11px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-500">${esc(k)}</span>`
-      ).join('');
+        `<span class="text-[11px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-500">${esc(k)}</span>`).join('');
     }
   }
 
-  let alreadyJoined = false;
-  if (myId && p.user_id !== myId) {
+  isOwner = myId && p.user_id === myId;
+  const isClosed = p.status === 'closed';
+
+  // Check participation
+  let isJoined = false;
+  let myFeedback = null;
+  if (myId && !isOwner) {
     const { data: hist } = await sb.from('test_history')
-      .select('id').eq('tester_id', myId).eq('project_id', p.id).maybeSingle();
-    alreadyJoined = !!hist;
+      .select('id, feedback')
+      .eq('tester_id', myId)
+      .eq('project_id', id)
+      .maybeSingle();
+    isJoined = !!hist;
+    myFeedback = hist?.feedback || null;
   }
 
-  renderParticipation(p, session, alreadyJoined, p.current_count);
-  await loadFeedback(p.id);
+  const canChat = isOwner || isJoined;
 
+  if (canChat) {
+    document.getElementById('chatArea').classList.remove('hidden');
+    setupChat(id, mySession);
+    if (!isOwner) setupFeedback(id, myFeedback);
+    else {
+      // 開発者はフィードバックボタン不要
+      document.getElementById('feedbackBtn').classList.add('hidden');
+    }
+  } else if (isClosed) {
+    document.getElementById('joinArea').classList.remove('hidden');
+    document.getElementById('joinContent').innerHTML = `
+      <div class="flex items-center gap-2 text-zinc-500 text-sm">
+        <i data-lucide="lock" class="w-4 h-4"></i> この募集はクローズしました
+      </div>`;
+  } else if (!mySession) {
+    document.getElementById('joinArea').classList.remove('hidden');
+    document.getElementById('joinContent').innerHTML = `
+      <p class="text-sm text-zinc-400 mb-4">テストに参加するには GitHub ログインが必要です。</p>
+      <a href="login.html" class="inline-flex items-center gap-2 grad-bg text-black font-bold px-6 py-3.5 rounded-xl hover:opacity-90 transition glow text-sm">
+        <i data-lucide="github" class="w-4 h-4"></i> ログインして参加する
+      </a>`;
+  } else {
+    document.getElementById('joinArea').classList.remove('hidden');
+    document.getElementById('joinContent').innerHTML = `
+      <div class="mb-5">
+        <p class="font-semibold text-base mb-1">このプロジェクトをテストする</p>
+        <p class="text-sm text-zinc-500">参加するとチャットルームに入れます。開発者や他のテスターと話しながら作品を試してみましょう。</p>
+      </div>
+      ${p.url ? `<a href="${esc(p.url)}" target="_blank" rel="noopener"
+        class="flex items-center justify-between p-4 rounded-xl border border-cyan-400/20 bg-cyan-400/5 hover:bg-cyan-400/8 transition mb-4 group">
+        <span class="text-sm font-medium text-cyan-300">先に作品を確認する</span>
+        <i data-lucide="external-link" class="w-4 h-4 text-cyan-400"></i>
+      </a>` : ''}
+      <button id="joinBtn" class="w-full grad-bg text-black font-bold py-3.5 rounded-xl hover:opacity-90 transition glow text-sm flex items-center justify-center gap-2">
+        <i data-lucide="rocket" class="w-4 h-4"></i> テストに参加する
+      </button>
+      <div id="joinErr" class="hidden mt-3 text-xs text-red-400"></div>`;
+
+    lucide.createIcons();
+
+    document.getElementById('joinBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('joinBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="opacity-60">処理中...</span>';
+
+      const { data, error } = await sb.rpc('join_project', { proj_id: id });
+      if (error || data?.error) {
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="rocket" class="w-4 h-4"></i> テストに参加する';
+        lucide.createIcons();
+        const errEl = document.getElementById('joinErr');
+        errEl.textContent = error?.message || 'エラーが発生しました';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      document.getElementById('countEl').textContent = `${p.current_count + 1}/${p.target_count} 人参加`;
+      document.getElementById('joinArea').classList.add('hidden');
+      document.getElementById('chatArea').classList.remove('hidden');
+      setupChat(id, mySession);
+      setupFeedback(id, null);
+    });
+  }
+
+  await loadFeedback(id);
   lucide.createIcons();
   show('contentEl');
 })();
