@@ -308,30 +308,31 @@ function setupChat(projectId, session) {
     })
     .subscribe();
 
-  // Send message
+  // Send message via RPC (bypasses RLS issues)
   async function sendMessage() {
     const input = document.getElementById('msgInput');
     const content = input.value.trim();
     if (!content) return;
-    input.value = '';
-    input.style.height = 'auto';
 
     const u = session.user;
     const username = u.user_metadata?.user_name || u.email?.split('@')[0] || 'user';
     const avatar_url = u.user_metadata?.avatar_url || '';
 
-    const { data: msg, error } = await sb.from('messages').insert({
-      project_id: projectId,
-      user_id: u.id,
-      username,
-      avatar_url,
-      content
-    }).select().single();
+    input.value = '';
+    input.style.height = 'auto';
 
-    if (!error && msg) {
-      sentMsgIds.add(msg.id);
-      renderMessage(msg, true);
+    const { data, error } = await sb.rpc('send_message', {
+      proj_id: projectId,
+      msg_content: content,
+      msg_username: username,
+      msg_avatar: avatar_url
+    });
+
+    if (error || data?.error) {
+      input.value = content;
+      console.error('送信エラー:', error || data?.error);
     }
+    // メッセージはRealtime経由で表示される
   }
 
   document.getElementById('sendBtn').addEventListener('click', sendMessage);
