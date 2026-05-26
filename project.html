@@ -330,7 +330,9 @@ function setupChat(projectId, session) {
 
     if (error || data?.error) {
       input.value = content;
-      console.error('送信エラー:', error || data?.error);
+      const msg = error?.message || data?.error || '不明なエラー';
+      alert('送信エラー: ' + msg);
+      return;
     }
     // メッセージはRealtime経由で表示される
   }
