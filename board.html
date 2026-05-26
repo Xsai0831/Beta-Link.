@@ -148,7 +148,7 @@
 
   <!-- Footer bar -->
   <div class="mt-4 flex items-center justify-between text-xs text-zinc-500">
-    <span id="countLabel">7件を表示中</span>
+    <span id="countLabel">読み込み中...</span>
     <button class="grad-text font-medium flex items-center gap-1">
       もっと見る <i data-lucide="arrow-right" class="w-3.5 h-3.5" aria-hidden="true"></i>
     </button>
@@ -270,6 +270,7 @@ function timeAgo(dateStr) {
 
 // ---- 実データ読み込み ----
 (async function () {
+  try {
   const session  = await auth.getSession();
   const myId     = session?.user?.id;
   const postDest = session ? 'post.html' : 'login.html';
@@ -305,12 +306,12 @@ function timeAgo(dateStr) {
     const tagsHtml = (p.tags || []).map(t =>
       `<span class="text-[10px] px-1.5 py-0.5 rounded font-mono ${TAG_COLORS[t] || 'tag-saas'}">${esc(t)}</span>`
     ).join('');
-    const isAdmin  = myId === ADMIN_ID;
-    const ownBadge = isOwn
-      ? isAdmin
-        ? `<span class="text-[10px] px-1.5 py-0.5 rounded border border-yellow-400/50 text-yellow-300 bg-yellow-400/10 font-semibold">👑 管理者</span>`
-        : `<span class="text-[10px] px-1.5 py-0.5 rounded border border-cyan-400/50 text-cyan-300 bg-cyan-400/10 font-semibold">自分の投稿</span>`
-      : '';
+    const isPostByAdmin = p.user_id === ADMIN_ID;
+    const ownBadge = isPostByAdmin
+      ? `<span class="text-[10px] px-1.5 py-0.5 rounded border border-yellow-400/50 text-yellow-300 bg-yellow-400/10 font-semibold">管理者</span>`
+      : isOwn
+        ? `<span class="text-[10px] px-1.5 py-0.5 rounded border border-cyan-400/50 text-cyan-300 bg-cyan-400/10 font-semibold">自分の投稿</span>`
+        : '';
     const editBtn = isOwn
       ? `<a href="post.html?id=${esc(p.id)}" class="text-xs text-zinc-400 hover:text-white border border-white/10 hover:border-white/20 px-3 py-1.5 rounded-lg transition flex-shrink-0">編集</a>`
       : '';
@@ -352,6 +353,11 @@ function timeAgo(dateStr) {
   lucide.createIcons();
   rows = Array.from(document.querySelectorAll('.board-row'));
   countLbl.textContent = `${rows.length}件を表示中`;
+  } catch(e) {
+    boardList.innerHTML = `<div class="px-5 py-12 text-center text-red-400 text-sm">エラー: ${e.message}</div>`;
+    countLbl.textContent = '読み込み失敗';
+    console.error(e);
+  }
 })();
 </script>
 </body>
