@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>参加中 — BetaLink</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="supabase-config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: { extend: {
+      fontFamily: { sans: ['Inter','Noto Sans JP','system-ui','sans-serif'] },
+      colors: { ink: { 900:'#0A0A0A', 800:'#0F0F10', 700:'#161618', 600:'#1C1C1F' } }
+    }}
+  }
+</script>
+<style>
+  body { font-family:'Inter','Noto Sans JP',system-ui,sans-serif; background:#0A0A0A; color:#E4E4E7; -webkit-font-smoothing:antialiased; }
+  .grad-text { background:linear-gradient(135deg,#00D4FF 0%,#A855F7 100%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .grad-bg   { background:linear-gradient(135deg,#00D4FF 0%,#A855F7 100%); }
+  .grad-border { position:relative; }
+  .grad-border::before {
+    content:''; position:absolute; inset:0; border-radius:inherit; padding:1px;
+    background:linear-gradient(135deg,rgba(0,212,255,.4),rgba(168,85,247,.4));
+    -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude; pointer-events:none;
+  }
+  .glass { background:rgba(15,15,16,.6); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+  .glow  { box-shadow:0 0 40px -10px rgba(0,212,255,.4),0 0 80px -20px rgba(168,85,247,.3); }
+  #bottomNav { padding-bottom:env(safe-area-inset-bottom,0px); }
+  .tag-ios     { background:rgba(0,212,255,.12); color:#67e8f9; border:1px solid rgba(0,212,255,.25); }
+  .tag-android { background:rgba(251,191,36,.1);  color:#fcd34d; border:1px solid rgba(251,191,36,.25); }
+  .tag-web     { background:rgba(52,211,153,.12); color:#6ee7b7; border:1px solid rgba(52,211,153,.25); }
+  .tag-ai      { background:rgba(168,85,247,.12); color:#d8b4fe; border:1px solid rgba(168,85,247,.25); }
+  .tag-saas    { background:rgba(148,163,184,.1); color:#cbd5e1; border:1px solid rgba(148,163,184,.25); }
+</style>
+</head>
+<body class="bg-ink-900 text-zinc-200 antialiased pb-20">
+
+<div class="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+  <div class="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-cyan-500/8 blur-[120px]"></div>
+  <div class="absolute top-1/2 -right-40 w-[400px] h-[400px] rounded-full bg-purple-500/8 blur-[120px]"></div>
+</div>
+
+<!-- Navbar -->
+<header class="fixed top-0 inset-x-0 z-50 glass border-b border-white/5">
+  <nav class="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center gap-3">
+    <a href="BetaLink.html" class="flex items-center gap-2 flex-shrink-0">
+      <div class="w-8 h-8 rounded-lg grad-bg flex items-center justify-center">
+        <svg viewBox="0 0 32 32" class="w-8 h-8">
+          <text x="16" y="23" text-anchor="middle" font-family="Inter,system-ui" font-weight="800" font-size="20" fill="#0A0A0A">β</text>
+        </svg>
+      </div>
+      <span class="font-bold text-lg tracking-tight hidden sm:inline">BetaLink</span>
+    </a>
+    <div class="flex-1"></div>
+    <div id="navUserArea" class="hidden flex items-center gap-2">
+      <img src="" class="w-8 h-8 rounded-full object-cover bg-zinc-800" alt="" />
+      <span data-username class="text-sm text-zinc-300 hidden sm:inline"></span>
+    </div>
+    <a id="navLoginBtn" href="login.html" class="hidden text-sm text-zinc-300 hover:text-white border border-white/15 px-3 py-2 rounded-lg transition">ログイン</a>
+  </nav>
+</header>
+
+<main class="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 pt-28 pb-12">
+
+  <div class="mb-8">
+    <div class="text-sm font-semibold grad-text mb-2">MY TESTS</div>
+    <h1 class="text-3xl font-bold tracking-tight">参加中のプロジェクト</h1>
+  </div>
+
+  <!-- Loading -->
+  <div id="loadingEl" class="py-16 text-center">
+    <div class="w-6 h-6 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin mx-auto mb-3"></div>
+    <p class="text-zinc-500 text-sm">読み込み中...</p>
+  </div>
+
+  <!-- Not logged in -->
+  <div id="notLoginEl" class="hidden py-16 text-center">
+    <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-5">
+      <i data-lucide="log-in" class="w-7 h-7 text-zinc-500"></i>
+    </div>
+    <p class="text-zinc-400 mb-2 font-medium">ログインが必要です</p>
+    <p class="text-zinc-600 text-sm mb-6">参加中のプロジェクトを確認するには GitHub ログインしてください。</p>
+    <a href="login.html" class="inline-flex items-center gap-2 grad-bg text-black font-bold px-6 py-3 rounded-xl hover:opacity-90 transition glow text-sm">
+      <i data-lucide="github" class="w-4 h-4"></i> ログインする
+    </a>
+  </div>
+
+  <!-- Empty -->
+  <div id="emptyEl" class="hidden py-16 text-center">
+    <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-5">
+      <i data-lucide="list-checks" class="w-7 h-7 text-zinc-500"></i>
+    </div>
+    <p class="text-zinc-400 mb-2 font-medium">まだ参加中のプロジェクトはありません</p>
+    <p class="text-zinc-600 text-sm mb-6">掲示板からプロジェクトを探してテストに参加しよう。</p>
+    <a href="board.html" class="inline-flex items-center gap-2 grad-text font-semibold text-sm">
+      掲示板を見る <i data-lucide="arrow-right" class="w-4 h-4"></i>
+    </a>
+  </div>
+
+  <!-- List -->
+  <div id="listEl" class="hidden space-y-3"></div>
+
+</main>
+
+<!-- Bottom Nav -->
+<nav id="bottomNav" aria-label="ボトムナビゲーション"
+     class="fixed bottom-0 inset-x-0 z-50 glass border-t border-white/10">
+  <div class="flex items-stretch h-16">
+    <a href="BetaLink.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="home" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium">ホーム</span>
+    </a>
+    <a href="board.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="layout-list" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium">掲示板</span>
+    </a>
+    <div class="flex-1 flex items-center justify-center -mt-4">
+      <a id="postBtnNav" href="login.html" class="w-14 h-14 rounded-2xl grad-bg text-black flex items-center justify-center shadow-lg glow">
+        <i data-lucide="plus" class="w-6 h-6"></i>
+      </a>
+    </div>
+    <a href="joined.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-emerald-400 pt-1">
+      <i data-lucide="list-checks" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium">参加中</span>
+    </a>
+    <a href="mypage.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="user" class="w-5 h-5"></i>
+      <span class="text-[10px] font-medium">マイページ</span>
+    </a>
+  </div>
+</nav>
+
+<script src="auth.js"></script>
+<script>
+lucide.createIcons();
+updateNavAuth();
+
+const TAG_COLORS = {
+  iOS:'tag-ios', Android:'tag-android', Web:'tag-web',
+  AI:'tag-ai', SaaS:'tag-saas', ゲーム:'tag-saas', デザイン:'tag-saas', その他:'tag-saas'
+};
+
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function timeAgo(d) {
+  const diff = Date.now() - new Date(d);
+  const m = Math.floor(diff/60000), h = Math.floor(diff/3600000), day = Math.floor(diff/86400000);
+  if (m < 1) return 'たった今';
+  if (m < 60) return `${m}分前`;
+  if (h < 24) return `${h}時間前`;
+  if (day === 1) return '昨日';
+  return `${day}日前`;
+}
+
+function show(id) {
+  document.getElementById('loadingEl').classList.add('hidden');
+  document.getElementById(id).classList.remove('hidden');
+}
+
+(async function () {
+  const session = await auth.getSession();
+  if (!session) { show('notLoginEl'); lucide.createIcons(); return; }
+
+  document.getElementById('postBtnNav').href = 'post.html';
+
+  // 参加済みプロジェクトを test_history 経由で取得
+  const { data: hist, error } = await sb
+    .from('test_history')
+    .select('project_id, feedback, created_at, projects(*)')
+    .eq('tester_id', session.user.id)
+    .order('created_at', { ascending: false });
+
+  if (error || !hist?.length) { show('emptyEl'); lucide.createIcons(); return; }
+
+  const listEl = document.getElementById('listEl');
+  listEl.innerHTML = hist.map(h => {
+    const p = h.projects;
+    if (!p) return '';
+    const tagsHtml = (p.tags || []).map(t =>
+      `<span class="text-[10px] px-1.5 py-0.5 rounded font-mono ${TAG_COLORS[t] || 'tag-saas'}">${esc(t)}</span>`
+    ).join('');
+    const hasFeedback = !!h.feedback;
+
+    return `
+      <div class="relative grad-border rounded-2xl">
+        <div class="rounded-2xl bg-ink-800 p-5 flex flex-col gap-3">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <div class="flex flex-wrap items-center gap-1.5 mb-2">
+                ${tagsHtml}
+                <span class="text-[10px] px-1.5 py-0.5 rounded border border-emerald-400/50 text-emerald-300 bg-emerald-400/10 font-semibold">参加中</span>
+              </div>
+              <h2 class="font-semibold text-base leading-snug mb-1">${esc(p.title)}</h2>
+              ${p.description ? `<p class="text-xs text-zinc-500 line-clamp-2">${esc(p.description)}</p>` : ''}
+            </div>
+          </div>
+          <div class="flex items-center justify-between gap-3 pt-1 border-t border-white/5">
+            <div class="flex items-center gap-3 text-xs text-zinc-600">
+              <span class="flex items-center gap-1">
+                <i data-lucide="users" class="w-3.5 h-3.5"></i>
+                ${p.current_count}/${p.target_count}
+              </span>
+              <span class="flex items-center gap-1">
+                <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                ${timeAgo(h.created_at)}に参加
+              </span>
+              ${hasFeedback
+                ? `<span class="flex items-center gap-1 text-purple-400/80"><i data-lucide="check" class="w-3.5 h-3.5"></i>FB済み</span>`
+                : ''}
+            </div>
+            <a href="project.html?id=${esc(p.id)}"
+               class="flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-400/25 hover:bg-emerald-500/25 transition">
+              <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+              チャットを開く
+            </a>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  show('listEl');
+  lucide.createIcons();
+})();
+</script>
+</body>
+</html>

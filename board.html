@@ -50,6 +50,13 @@
   .tag-urgent  { background:rgba(244,63,94,.12);  color:#fda4af; border:1px solid rgba(244,63,94,.25); }
   .tag-match   { background:rgba(52,211,153,.12); color:#6ee7b7; border:1px solid rgba(52,211,153,.25); }
   .tag-closed  { background:rgba(113,113,122,.1); color:#a1a1aa; border:1px solid rgba(113,113,122,.25); }
+  #bottomSheet { transform:translateY(100%); transition:transform .32s cubic-bezier(.32,0,0,1); }
+  #bottomSheet.open { transform:translateY(0); }
+  #sheetBackdrop { opacity:0; pointer-events:none; transition:opacity .25s ease; }
+  #sheetBackdrop.open { opacity:1; pointer-events:auto; }
+  #sheetScroll { scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.1) transparent; }
+  #sheetScroll::-webkit-scrollbar { width:4px; }
+  #sheetScroll::-webkit-scrollbar-thumb { background:rgba(255,255,255,.1); border-radius:4px; }
 </style>
 </head>
 <body class="bg-ink-900 text-zinc-200 antialiased overflow-x-hidden pb-16">
@@ -90,8 +97,13 @@
 
     <div class="flex items-center gap-2 flex-shrink-0">
       <!-- ログイン前 -->
-      <a id="navLoginBtn" href="login.html" class="hidden sm:inline-flex items-center gap-1.5 text-sm text-zinc-300 hover:text-white border border-white/15 hover:border-white/25 transition px-3 py-2 rounded-lg">
+      <a id="navLoginBtn" href="login.html" class="items-center gap-1.5 text-sm text-zinc-300 hover:text-white border border-white/15 hover:border-white/25 transition px-3 py-2 rounded-lg">
         ログイン
+      </a>
+      <!-- ログイン後 -->
+      <a id="navUserArea" href="mypage.html" class="hidden items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 transition">
+        <img src="" alt="アバター" class="w-7 h-7 rounded-full border border-white/10" />
+        <span data-username class="text-sm text-zinc-300 hidden sm:inline"></span>
       </a>
       <a id="postBtnNavbar" href="login.html" class="grad-bg text-black font-semibold text-sm px-3 sm:px-4 py-2 rounded-lg hover:opacity-90 transition flex items-center gap-1.5 glow whitespace-nowrap">
         <i data-lucide="plus" class="w-4 h-4 sm:hidden" aria-hidden="true"></i>
@@ -174,9 +186,9 @@
         <i data-lucide="plus" class="w-6 h-6" aria-hidden="true"></i>
       </a>
     </div>
-    <a href="login.html" class="bn-item flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
-      <i data-lucide="bell" class="w-5 h-5" aria-hidden="true"></i>
-      <span class="text-[10px] font-medium">通知</span>
+    <a href="joined.html" class="bn-item flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="list-checks" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">参加中</span>
     </a>
     <a href="mypage.html" class="bn-item flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
       <i data-lucide="user" class="w-5 h-5" aria-hidden="true"></i>
@@ -184,6 +196,54 @@
     </a>
   </div>
 </nav>
+
+<!-- Bottom Sheet backdrop -->
+<div id="sheetBackdrop" class="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm" onclick="closeSheet()"></div>
+
+<!-- Bottom Sheet -->
+<div id="bottomSheet" class="fixed bottom-0 inset-x-0 z-[70] flex flex-col rounded-t-2xl bg-ink-800 border-t border-white/10" style="max-height:88vh">
+  <!-- Handle + close -->
+  <div class="flex-shrink-0 pt-3 pb-2 px-5">
+    <div class="w-10 h-1 rounded-full bg-white/20 mx-auto mb-3"></div>
+    <div class="flex items-start justify-between gap-3">
+      <div id="sheetTags" class="flex flex-wrap gap-1.5"></div>
+      <button onclick="closeSheet()" class="text-zinc-500 hover:text-zinc-300 transition flex-shrink-0 p-1 -mr-1 -mt-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Scrollable body -->
+  <div id="sheetScroll" class="overflow-y-auto flex-1 px-5 pb-2">
+    <h2 id="sheetTitle" class="text-xl font-bold mb-2 leading-snug"></h2>
+    <p id="sheetDesc" class="text-zinc-400 text-sm leading-relaxed mb-4"></p>
+    <div id="sheetKwWrap" class="hidden flex-wrap gap-1.5 mb-4"></div>
+    <div class="flex flex-wrap items-center gap-4 text-sm text-zinc-500 pb-4 border-b border-white/5">
+      <span class="flex items-center gap-1.5">
+        <i data-lucide="users" class="w-4 h-4"></i>
+        <span id="sheetCount"></span>
+      </span>
+      <span class="flex items-center gap-1.5">
+        <i data-lucide="clock" class="w-4 h-4"></i>
+        <span id="sheetTime"></span>
+      </span>
+      <span id="sheetUrlWrap" class="hidden">
+        <a id="sheetUrl" href="#" target="_blank" rel="noopener"
+          class="flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 transition font-medium">
+          <i data-lucide="external-link" class="w-3.5 h-3.5"></i> 作品を開く
+        </a>
+      </span>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="flex-shrink-0 px-5 py-4 border-t border-white/5" style="padding-bottom:calc(1rem + env(safe-area-inset-bottom,0px))">
+    <button id="sheetJoinBtn"
+      class="w-full grad-bg text-black font-bold py-3.5 rounded-xl hover:opacity-90 transition glow text-sm flex items-center justify-center gap-2">
+      <i data-lucide="rocket" class="w-4 h-4"></i> 参加する
+    </button>
+  </div>
+</div>
 
 <script src="auth.js"></script>
 <script>
@@ -197,6 +257,70 @@ const boardList = document.getElementById('boardList');
 let rows         = [];
 let activeFilter = 'all';
 let activeSort   = 'new';
+const projectsMap = {};
+let mySession = null;
+const joinedIds = new Set();
+
+function openSheet(id) {
+  const p = projectsMap[id];
+  if (!p) return;
+
+  const tagsEl = document.getElementById('sheetTags');
+  tagsEl.innerHTML = (p.tags || []).map(t =>
+    `<span class="text-[11px] px-2 py-0.5 rounded font-mono ${TAG_COLORS[t] || 'tag-saas'}">${esc(t)}</span>`
+  ).join('');
+  if (p.user_id === ADMIN_ID) {
+    tagsEl.innerHTML += `<span class="text-[10px] px-1.5 py-0.5 rounded border border-yellow-400/50 text-yellow-300 bg-yellow-400/10 font-semibold">管理者</span>`;
+  }
+
+  document.getElementById('sheetTitle').textContent = p.title;
+  document.getElementById('sheetDesc').textContent = p.description || '説明なし';
+  document.getElementById('sheetCount').textContent = `${p.current_count}/${p.target_count} 人参加`;
+  document.getElementById('sheetTime').textContent = timeAgo(p.created_at);
+
+  const kwWrap = document.getElementById('sheetKwWrap');
+  if (p.keywords) {
+    const kws = p.keywords.split(/[,、\s]+/).filter(Boolean);
+    if (kws.length) {
+      kwWrap.innerHTML = kws.map(k => `<span class="text-[11px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-500">${esc(k)}</span>`).join('');
+      kwWrap.classList.remove('hidden');
+      kwWrap.classList.add('flex');
+    } else { kwWrap.classList.add('hidden'); kwWrap.classList.remove('flex'); }
+  } else { kwWrap.classList.add('hidden'); kwWrap.classList.remove('flex'); }
+
+  const urlWrap = document.getElementById('sheetUrlWrap');
+  if (p.url) {
+    document.getElementById('sheetUrl').href = p.url;
+    urlWrap.classList.remove('hidden');
+  } else {
+    urlWrap.classList.add('hidden');
+  }
+
+  const isOwnerSheet = mySession && p.user_id === mySession.user?.id;
+  const isJoinedSheet = joinedIds.has(id);
+  const btn = document.getElementById('sheetJoinBtn');
+  btn.onclick = () => { location.href = `project.html?id=${id}`; };
+  if (isOwnerSheet) {
+    btn.innerHTML = '<i data-lucide="message-circle" class="w-4 h-4"></i> チャットを管理する';
+    btn.className = 'w-full text-black font-bold py-3.5 rounded-xl hover:opacity-90 transition text-sm flex items-center justify-center gap-2 grad-bg glow';
+  } else if (isJoinedSheet) {
+    btn.innerHTML = '<i data-lucide="message-circle" class="w-4 h-4"></i> チャットを開く';
+    btn.className = 'w-full font-bold py-3.5 rounded-xl hover:opacity-90 transition text-sm flex items-center justify-center gap-2 bg-emerald-500/20 text-emerald-300 border border-emerald-400/30';
+  } else {
+    btn.innerHTML = '<i data-lucide="rocket" class="w-4 h-4"></i> 参加する';
+    btn.className = 'w-full grad-bg text-black font-bold py-3.5 rounded-xl hover:opacity-90 transition glow text-sm flex items-center justify-center gap-2';
+  }
+
+  document.getElementById('sheetScroll').scrollTop = 0;
+  document.getElementById('sheetBackdrop').classList.add('open');
+  document.getElementById('bottomSheet').classList.add('open');
+  lucide.createIcons();
+}
+
+function closeSheet() {
+  document.getElementById('sheetBackdrop').classList.remove('open');
+  document.getElementById('bottomSheet').classList.remove('open');
+}
 
 function esc(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -271,14 +395,20 @@ function timeAgo(dateStr) {
 // ---- 実データ読み込み ----
 (async function () {
   try {
-  const session  = await auth.getSession();
-  const myId     = session?.user?.id;
-  const postDest = session ? 'post.html' : 'login.html';
+  mySession       = await auth.getSession();
+  const myId     = mySession?.user?.id;
+  const postDest = mySession ? 'post.html' : 'login.html';
 
   ['postBtnHeader','postBtnNavbar','postBtnNav'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.href = postDest;
   });
+
+  // 参加済みプロジェクトIDを取得
+  if (myId) {
+    const { data: hist } = await sb.from('test_history').select('project_id').eq('tester_id', myId);
+    (hist || []).forEach(h => joinedIds.add(h.project_id));
+  }
 
   const { data: projects, error } = await sb
     .from('projects')
@@ -301,17 +431,22 @@ function timeAgo(dateStr) {
     return;
   }
 
+  projects.forEach(p => { projectsMap[p.id] = p; });
+
   boardList.innerHTML = projects.map((p, i) => {
     const isOwn    = myId && p.user_id === myId;
     const tagsHtml = (p.tags || []).map(t =>
       `<span class="text-[10px] px-1.5 py-0.5 rounded font-mono ${TAG_COLORS[t] || 'tag-saas'}">${esc(t)}</span>`
     ).join('');
     const isPostByAdmin = p.user_id === ADMIN_ID;
+    const isJoined = !isOwn && joinedIds.has(p.id);
     const ownBadge = isPostByAdmin
       ? `<span class="text-[10px] px-1.5 py-0.5 rounded border border-yellow-400/50 text-yellow-300 bg-yellow-400/10 font-semibold">管理者</span>`
       : isOwn
         ? `<span class="text-[10px] px-1.5 py-0.5 rounded border border-cyan-400/50 text-cyan-300 bg-cyan-400/10 font-semibold">自分の投稿</span>`
-        : '';
+        : isJoined
+          ? `<span class="text-[10px] px-1.5 py-0.5 rounded border border-emerald-400/50 text-emerald-300 bg-emerald-400/10 font-semibold">参加中</span>`
+          : '';
     const editBtn = isOwn
       ? `<a href="post.html?id=${esc(p.id)}" onclick="event.stopPropagation()" class="text-xs text-zinc-400 hover:text-white border border-white/10 hover:border-white/20 px-3 py-1.5 rounded-lg transition flex-shrink-0">編集</a>`
       : '';
@@ -326,8 +461,8 @@ function timeAgo(dateStr) {
            data-tags="${esc((p.tags || []).join(' ').toLowerCase())}"
            data-urgent="false"
            data-keywords="${esc((p.keywords || '').toLowerCase())}"
-           onclick="location.href='project.html?id=${esc(p.id)}'"
-           role="link" tabindex="0">
+           onclick="openSheet('${esc(p.id)}')"
+           role="button" tabindex="0">
         <div class="col-span-1 text-zinc-600 font-mono text-xs pt-1 hidden sm:block">#${String(i + 1).padStart(3,'0')}</div>
         <div class="col-span-12 sm:col-span-7">
           <div class="flex items-center gap-1.5 flex-wrap mb-1.5">

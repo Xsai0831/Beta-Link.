@@ -58,8 +58,9 @@ async function updateNavAuth() {
     const u = session.user;
     const avatar   = u.user_metadata?.avatar_url;
     const username = u.user_metadata?.user_name || u.email?.split('@')[0] || 'user';
-    if (loginBtn)  loginBtn.classList.add('hidden');
+    if (loginBtn)  loginBtn.style.display = 'none';
     if (userArea) {
+      userArea.style.display = '';
       userArea.classList.remove('hidden');
       const img  = userArea.querySelector('img');
       const name = userArea.querySelector('[data-username]');
@@ -67,7 +68,10 @@ async function updateNavAuth() {
       if (name) name.textContent = `@${username}`;
     }
   } else {
-    if (loginBtn)  loginBtn.classList.remove('hidden');
-    if (userArea)  userArea.classList.add('hidden');
+    if (loginBtn)  loginBtn.style.display = '';
+    if (userArea) {
+      userArea.style.display = 'none';
+      userArea.classList.add('hidden');
+    }
   }
 }

@@ -46,6 +46,33 @@
 </head>
 <body class="bg-ink-900 text-zinc-200 antialiased overflow-x-hidden pb-16">
 
+<!-- Welcome Credit Modal -->
+<div id="welcomeModal" class="hidden fixed inset-0 z-[200] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+  <div class="relative max-w-sm w-full rounded-3xl overflow-hidden text-center">
+    <!-- gradient border -->
+    <div class="absolute inset-0 rounded-3xl p-px" style="background:linear-gradient(135deg,#00D4FF,#A855F7,#ec4899)">
+      <div class="absolute inset-[1px] rounded-3xl bg-ink-800"></div>
+    </div>
+    <div class="relative px-8 py-10">
+      <!-- Coin icon -->
+      <div class="w-20 h-20 rounded-full grad-bg flex items-center justify-center mx-auto mb-6 glow" style="font-size:2.5rem">🎉</div>
+      <div class="text-xs font-semibold grad-text tracking-widest mb-3">BETA WELCOME BONUS</div>
+      <p class="text-xl font-bold leading-snug mb-1">ベータ版利用<br />ありがとう！</p>
+      <div class="mt-4 mb-6 px-5 py-3 rounded-2xl bg-white/5 border border-white/10">
+        <div class="text-4xl font-extrabold grad-text">+ 100</div>
+        <div class="text-sm text-zinc-400 mt-0.5">トークン</div>
+      </div>
+      <button id="welcomeCloseBtn"
+        class="w-full grad-bg text-black font-bold py-3.5 rounded-xl hover:opacity-90 transition glow text-sm">
+        １００トークンを受け取る 🎁
+      </button>
+    </div>
+    <!-- Confetti dots -->
+    <div id="confettiWrap" class="absolute inset-0 pointer-events-none overflow-hidden rounded-3xl"></div>
+  </div>
+</div>
+
 <!-- Ambient -->
 <div class="pointer-events-none fixed inset-0 z-0 overflow-hidden">
   <div class="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-purple-500/8 blur-[120px]"></div>
@@ -95,7 +122,7 @@
           <i data-lucide="user" class="w-9 h-9 text-zinc-600" aria-hidden="true"></i>
         </div>
         <h1 class="text-xl font-bold mb-1">ログインしていません</h1>
-        <p class="text-sm text-zinc-400 mb-6">プロジェクトの投稿・テスト参加・クレジット管理にはログインが必要です。</p>
+        <p class="text-sm text-zinc-400 mb-6">プロジェクトの投稿・テスト参加・トークン管理にはログインが必要です。</p>
         <a href="login.html" class="inline-flex items-center gap-2 grad-bg text-black font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition glow">
           <i data-lucide="log-in" class="w-4 h-4" aria-hidden="true"></i>
           ログイン / 新規登録
@@ -129,8 +156,8 @@
           <i data-lucide="coins" class="w-5 h-5 text-emerald-400" aria-hidden="true"></i>
         </div>
         <div>
-          <div class="font-semibold text-sm mb-1">クレジットを貯める</div>
-          <div class="text-xs text-zinc-500 leading-relaxed">テストして学びノートを書くと、クレジット獲得。</div>
+          <div class="font-semibold text-sm mb-1">トークンを貯める</div>
+          <div class="text-xs text-zinc-500 leading-relaxed">テストして学びノートを書くと、トークン獲得。</div>
         </div>
       </div>
       <div class="p-5 rounded-2xl bg-ink-800 border border-white/5 flex items-start gap-4">
@@ -185,7 +212,7 @@
         </div>
         <div class="p-4 rounded-xl bg-white/[0.03] border border-white/5 text-center">
           <div id="statsCredits" class="text-2xl font-bold text-emerald-300">0</div>
-          <div class="text-xs text-zinc-500 mt-0.5">クレジット</div>
+          <div class="text-xs text-zinc-500 mt-0.5">トークン</div>
         </div>
       </div>
     </div>
@@ -233,9 +260,9 @@
         <i data-lucide="plus" class="w-6 h-6" aria-hidden="true"></i>
       </a>
     </div>
-    <a href="login.html" class="bn-item flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
-      <i data-lucide="bell" class="w-5 h-5" aria-hidden="true"></i>
-      <span class="text-[10px] font-medium">通知</span>
+    <a href="joined.html" class="bn-item flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="list-checks" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">参加中</span>
     </a>
     <a href="mypage.html" class="bn-item flex-1 flex flex-col items-center justify-center gap-0.5 text-cyan-400 pt-1">
       <i data-lucide="user" class="w-5 h-5" aria-hidden="true"></i>
@@ -290,6 +317,15 @@ function esc(str) {
   guestEl.classList.add('hidden');
   loggedEl.classList.remove('hidden');
 
+  // ウェルカムトークン & 残高表示
+  const { data: creditResult, error: creditErr } = await sb.rpc('claim_welcome_credits');
+  if (creditErr) {
+    console.error('credit error:', creditErr.message);
+  } else {
+    document.getElementById('statsCredits').textContent = creditResult?.credits ?? 0;
+    if (creditResult?.new_claim) showWelcomeModal();
+  }
+
   // ---- 自分のプロジェクト ----
   const { data: projects } = await sb.from('projects')
     .select('*').eq('user_id', u.id).order('created_at', { ascending: false });
@@ -332,9 +368,10 @@ function esc(str) {
   const { data: history } = await sb.from('test_history')
     .select('*, projects(title)').eq('tester_id', u.id).order('created_at', { ascending: false });
 
-  const totalCredits = history?.reduce((sum, h) => sum + (h.credits_earned || 0), 0) ?? 0;
-  document.getElementById('statsTests').textContent   = history?.length ?? 0;
-  document.getElementById('statsCredits').textContent = totalCredits;
+  document.getElementById('statsTests').textContent = history?.length ?? 0;
+  // トークンは profiles テーブルから取得（claim_welcome_credits の結果で既にセット済みだが念のため上書き）
+  const { data: prof } = await sb.from('profiles').select('credits').eq('id', u.id).maybeSingle();
+  document.getElementById('statsCredits').textContent = prof?.credits ?? 0;
 
   const historyList = document.getElementById('testHistoryList');
   if (!history || history.length === 0) {
@@ -359,6 +396,40 @@ function esc(str) {
       </div>`).join('');
   }
 })();
+
+function showWelcomeModal() {
+  const modal = document.getElementById('welcomeModal');
+  modal.classList.remove('hidden');
+
+  // Confetti
+  const wrap = document.getElementById('confettiWrap');
+  const colors = ['#00D4FF','#A855F7','#ec4899','#facc15','#34d399','#f97316'];
+  for (let i = 0; i < 30; i++) {
+    const dot = document.createElement('div');
+    const size = 4 + Math.random() * 8;
+    dot.style.cssText = `
+      position:absolute;
+      width:${size}px; height:${size}px;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      border-radius:${Math.random()>.5?'50%':'2px'};
+      left:${Math.random()*100}%;
+      top:-10px;
+      opacity:0;
+      animation: confettiFall ${1.5+Math.random()*2}s ease-in ${Math.random()*1.5}s forwards;
+    `;
+    wrap.appendChild(dot);
+  }
+
+  document.getElementById('welcomeCloseBtn').addEventListener('click', () => {
+    modal.classList.add('hidden');
+  });
+}
 </script>
+<style>
+@keyframes confettiFall {
+  0%   { opacity:1; transform: translateY(0) rotate(0deg); }
+  100% { opacity:0; transform: translateY(350px) rotate(720deg); }
+}
+</style>
 </body>
 </html>

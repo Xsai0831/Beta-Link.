@@ -76,9 +76,16 @@
 <main class="relative z-10 max-w-2xl mx-auto px-4 sm:px-6 pt-28 pb-12">
 
   <div id="formWrap" class="hidden">
-    <div class="mb-8">
-      <h1 id="pageTitle" class="text-2xl font-bold mb-1">プロジェクトを投稿</h1>
-      <p class="text-sm text-zinc-500">β テスターを集めたいプロジェクトの情報を入力してください。</p>
+    <div class="mb-8 flex items-start justify-between flex-wrap gap-3">
+      <div>
+        <h1 id="pageTitle" class="text-2xl font-bold mb-1">プロジェクトを投稿</h1>
+        <p class="text-sm text-zinc-500">β テスターを集めたいプロジェクトの情報を入力してください。</p>
+      </div>
+      <div id="creditBadge" class="hidden flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-sm">
+        <i data-lucide="coins" class="w-4 h-4 text-emerald-400"></i>
+        <span id="creditCount" class="font-bold text-emerald-300">0</span>
+        <span class="text-zinc-500 text-xs">トークン</span>
+      </div>
     </div>
 
     <!-- Alert -->
@@ -190,7 +197,11 @@
       </div>
 
       <!-- Actions -->
-      <div class="flex items-center gap-3 pt-2">
+      <div id="tokenCostNote" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-sm text-amber-300">
+        <i data-lucide="coins" class="w-4 h-4 flex-shrink-0"></i>
+        <span>投稿には <strong>5トークン</strong> を消費します（現在: <span id="creditCount2">-</span> トークン）</span>
+      </div>
+      <div class="flex items-center gap-3 pt-1">
         <button type="submit" id="submitBtn"
           class="flex-1 grad-bg text-black font-bold py-3 px-6 rounded-xl hover:opacity-90 transition glow flex items-center justify-center gap-2">
           <i data-lucide="send" class="w-4 h-4" aria-hidden="true"></i>
@@ -233,9 +244,9 @@
         <i data-lucide="plus" class="w-6 h-6" aria-hidden="true"></i>
       </a>
     </div>
-    <a href="login.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
-      <i data-lucide="bell" class="w-5 h-5" aria-hidden="true"></i>
-      <span class="text-[10px] font-medium">通知</span>
+    <a href="joined.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="list-checks" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">参加中</span>
     </a>
     <a href="mypage.html" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
       <i data-lucide="user" class="w-5 h-5" aria-hidden="true"></i>
@@ -300,6 +311,18 @@ function hideAlert() { document.getElementById('alert').classList.add('hidden');
   const editId     = urlParams.get('id');
   const overlay    = document.getElementById('loadingOverlay');
   const formWrap   = document.getElementById('formWrap');
+
+  // トークン残高表示（新規投稿時のみ）
+  if (!editId) {
+    const { data: prof } = await sb.from('profiles').select('credits').eq('id', session.user.id).maybeSingle();
+    const credits = prof?.credits ?? 0;
+    document.getElementById('creditCount').textContent = credits;
+    document.getElementById('creditCount2').textContent = credits;
+    document.getElementById('creditBadge').classList.remove('hidden');
+    lucide.createIcons();
+  } else {
+    document.getElementById('tokenCostNote').classList.add('hidden');
+  }
 
   if (editId) {
     // 編集モード
@@ -408,20 +431,22 @@ function hideAlert() { document.getElementById('alert').classList.add('hidden');
       const keywords = document.getElementById('inputKeywords').value.trim();
 
       const url = document.getElementById('inputUrl').value.trim();
-      const { error } = await sb.from('projects').insert({
-        user_id:      session.user.id,
-        title,
-        description:  desc,
-        url,
-        keywords,
-        tags,
-        type,
-        target_count: count,
+      const { data: result, error } = await sb.rpc('create_project', {
+        p_title:        title,
+        p_description:  desc,
+        p_url:          url,
+        p_keywords:     keywords,
+        p_tags:         tags,
+        p_type:         type,
+        p_target_count: count,
       });
       btn.disabled = false;
       btn.querySelector('span').textContent = '投稿する';
 
-      if (error) { showAlert('投稿できませんでした: ' + error.message); return; }
+      if (error || result?.error) {
+        showAlert((result?.error) || '投稿できませんでした: ' + error?.message);
+        return;
+      }
       showAlert('投稿しました！', 'success');
       setTimeout(() => window.location.href = 'mypage.html', 1200);
     });

@@ -123,6 +123,50 @@
   #bottomNav {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+
+  /* Hero animations */
+  @keyframes gradShift {
+    0%,100% { background-position: 0% 50%; }
+    50%      { background-position: 100% 50%; }
+  }
+  @keyframes titleFloat {
+    0%,100% { transform: translateY(0px); }
+    50%      { transform: translateY(-8px); }
+  }
+  @keyframes titleGlow {
+    0%,100% { text-shadow: 0 0 40px rgba(0,212,255,.5), 0 0 80px rgba(168,85,247,.3); }
+    50%      { text-shadow: 0 0 80px rgba(0,212,255,.8), 0 0 140px rgba(168,85,247,.6); }
+  }
+  @keyframes sparkle {
+    0%   { opacity:0; transform: scale(0) rotate(0deg); }
+    50%  { opacity:1; transform: scale(1) rotate(180deg); }
+    100% { opacity:0; transform: scale(0) rotate(360deg); }
+  }
+  @keyframes floatUp {
+    0%   { opacity:0; transform: translateY(0) scale(0.5); }
+    20%  { opacity:1; }
+    100% { opacity:0; transform: translateY(-80px) scale(1.2); }
+  }
+  .hero-title {
+    background: linear-gradient(270deg, #00D4FF, #A855F7, #00D4FF, #ec4899, #00D4FF);
+    background-size: 400% 400%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradShift 4s ease infinite, titleFloat 4s ease-in-out infinite, titleGlow 4s ease-in-out infinite;
+    display: inline-block;
+  }
+  .sparkle-dot {
+    position: absolute;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: floatUp 2s ease-in-out infinite;
+  }
+  .hero-badge-pill {
+    animation: titleFloat 3s ease-in-out infinite;
+    animation-delay: -1s;
+  }
 </style>
 </head>
 <body class="bg-ink-900 text-zinc-200 antialiased relative overflow-x-hidden pb-16">
@@ -189,225 +233,83 @@
 </header>
 
 <!-- ============== HERO ============== -->
-<section class="relative pt-32 sm:pt-40 pb-20 sm:pb-32 z-10">
+<section class="relative pt-32 sm:pt-40 pb-20 sm:pb-32 z-10 overflow-hidden">
   <div class="absolute inset-0 grid-bg radial-fade pointer-events-none"></div>
+
+  <!-- Sparkle container -->
+  <div id="sparkleWrap" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
+
+  <!-- Badge: top-left -->
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-    <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-      <!-- Left -->
-      <div>
-        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-xs text-zinc-300 mb-6">
-          <span class="relative flex h-2 w-2">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-400"></span>
-          </span>
-          ベータ版公開中 · 現在完全無料
-        </div>
-        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1]">
-          個人開発者同士で<span class="grad-text">テストし合い</span>、<br />
-          最新のアプリから学び合おう。
-        </h1>
-        <p class="mt-6 text-base sm:text-lg text-zinc-400 leading-relaxed max-w-xl">
-          投稿するだけで即テスターが集まる。テストする側は最新アプリを触りながらクレジット獲得。<br />
-          最新のアプリを触って、UX/UI のインスピレーションをコミュニティと共有しよう。
-        </p>
-        <div class="mt-8 flex flex-col sm:flex-row gap-3">
-          <button data-login data-login-dest="post.html" class="grad-bg text-black font-semibold px-6 py-3.5 rounded-xl hover:opacity-90 transition flex items-center justify-center gap-2 glow">
-            今すぐプロジェクトを投稿する
-            <i data-lucide="arrow-right" class="w-4 h-4" aria-hidden="true"></i>
-          </button>
-          <button data-login data-login-dest="board.html" class="border border-white/15 bg-white/5 hover:bg-white/10 transition font-medium px-6 py-3.5 rounded-xl flex items-center justify-center gap-2">
-            <i data-lucide="book-open" class="w-4 h-4" aria-hidden="true"></i>
-            テスターとして参加して勉強
-          </button>
-        </div>
-        <div class="mt-8 flex items-center gap-4 text-xs text-zinc-500">
-          <div class="flex -space-x-2">
-            <img src="https://picsum.photos/seed/a1/40" class="w-7 h-7 rounded-full border-2 border-ink-900" alt="" />
-            <img src="https://picsum.photos/seed/a2/40" class="w-7 h-7 rounded-full border-2 border-ink-900" alt="" />
-            <img src="https://picsum.photos/seed/a3/40" class="w-7 h-7 rounded-full border-2 border-ink-900" alt="" />
-            <img src="https://picsum.photos/seed/a4/40" class="w-7 h-7 rounded-full border-2 border-ink-900" alt="" />
-          </div>
-          <span>ベータ期間中は <span class="text-white font-semibold">すべての機能が無料</span></span>
-        </div>
+    <div class="hero-badge-pill inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-xs text-zinc-300 mb-8">
+      <span class="relative flex h-2 w-2">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-400"></span>
+      </span>
+      ベータ版公開中 · 現在完全無料
+    </div>
+  </div>
+
+  <!-- Centered content -->
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative text-center">
+    <h1 class="relative inline-block">
+      <span class="hero-title text-6xl sm:text-7xl lg:text-8xl font-extrabold tracking-tight leading-none">
+        Beta Link.
+      </span>
+      <span class="absolute -bottom-1 -right-2 sm:-right-4 text-lg sm:text-xl font-bold grad-text" style="animation: titleFloat 3s ease-in-out infinite; animation-delay:-0.5s">β版</span>
+    </h1>
+    <p class="mt-10 text-base sm:text-lg text-zinc-400 leading-relaxed">
+      個人開発者同士でテストし合い、最新のアプリから学び合おう。<br />
+      投稿するだけで即テスターが集まる。テストする側は最新アプリを触りながらトークン獲得。
+    </p>
+    <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+      <button data-login data-login-dest="post.html" class="grad-bg text-black font-semibold px-6 py-3.5 rounded-xl hover:opacity-90 transition flex items-center justify-center gap-2 glow">
+        今すぐプロジェクトを投稿する
+        <i data-lucide="arrow-right" class="w-4 h-4" aria-hidden="true"></i>
+      </button>
+      <button data-login data-login-dest="board.html" class="border border-white/15 bg-white/5 hover:bg-white/10 transition font-medium px-6 py-3.5 rounded-xl flex items-center justify-center gap-2">
+        <i data-lucide="book-open" class="w-4 h-4" aria-hidden="true"></i>
+        テスターとして参加して勉強
+      </button>
+    </div>
+    <div class="mt-8 flex items-center justify-center gap-4 text-xs text-zinc-500">
+      <div class="flex -space-x-2">
+        <img src="https://picsum.photos/seed/a1/40" class="w-7 h-7 rounded-full border-2 border-ink-900" alt="" />
+        <img src="https://picsum.photos/seed/a2/40" class="w-7 h-7 rounded-full border-2 border-ink-900" alt="" />
+        <img src="https://picsum.photos/seed/a3/40" class="w-7 h-7 rounded-full border-2 border-ink-900" alt="" />
+        <img src="https://picsum.photos/seed/a4/40" class="w-7 h-7 rounded-full border-2 border-ink-900" alt="" />
       </div>
-
-      <!-- Right: Bulletin Board Mockup (decorative — real content in #board below) -->
-      <div class="relative" aria-hidden="true">
-        <div class="absolute -inset-4 grad-bg opacity-20 blur-3xl rounded-3xl"></div>
-        <div class="relative grad-border p-1 animate-float">
-          <div class="rounded-2xl bg-ink-800 overflow-hidden border border-white/5">
-            <!-- Window chrome -->
-            <div class="flex items-center gap-2 px-4 py-3 border-b border-white/5 bg-ink-700">
-              <div class="flex gap-1.5">
-                <div class="w-3 h-3 rounded-full bg-red-500/70"></div>
-                <div class="w-3 h-3 rounded-full bg-yellow-500/70"></div>
-                <div class="w-3 h-3 rounded-full bg-green-500/70"></div>
-              </div>
-              <div class="flex-1 text-center text-xs text-zinc-500 font-mono">betalink.app/board</div>
-            </div>
-
-            <!-- Board header -->
-            <div class="px-5 pt-4 pb-3 border-b border-white/5 flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <i data-lucide="layout-grid" class="w-4 h-4 text-cyan-400"></i>
-                <span class="font-semibold text-sm">プロジェクト掲示板</span>
-                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border border-cyan-400/30 text-cyan-300 bg-cyan-400/10 tracking-wider">BETA</span>
-              </div>
-            </div>
-
-            <!-- Filter tabs -->
-            <div class="px-5 py-3 border-b border-white/5 flex items-center gap-2 text-xs overflow-x-auto">
-              <span class="px-2.5 py-1 rounded-md bg-white/10 text-white font-medium whitespace-nowrap">すべて</span>
-              <span class="px-2.5 py-1 rounded-md text-zinc-500 hover:text-zinc-300 whitespace-nowrap">iOS</span>
-              <span class="px-2.5 py-1 rounded-md text-zinc-500 hover:text-zinc-300 whitespace-nowrap">Android</span>
-              <span class="px-2.5 py-1 rounded-md text-zinc-500 hover:text-zinc-300 whitespace-nowrap">Web</span>
-              <span class="px-2.5 py-1 rounded-md text-zinc-500 hover:text-zinc-300 whitespace-nowrap">AI</span>
-              <span class="px-2.5 py-1 rounded-md text-zinc-500 hover:text-zinc-300 whitespace-nowrap">SaaS</span>
-            </div>
-
-            <!-- Thread list -->
-            <div class="divide-y divide-white/5">
-              <!-- Post 1 (pinned) -->
-              <div class="px-5 py-3.5 hover:bg-white/[0.02] transition flex items-start gap-3">
-                <div class="flex flex-col items-center pt-0.5 w-7 flex-shrink-0">
-                  <i data-lucide="pin" class="w-3.5 h-3.5 text-cyan-400"></i>
-                  <span class="text-[10px] text-cyan-400 mt-0.5">PIN</span>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/20 font-mono">iOS</span>
-                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/20 font-mono">AI</span>
-                    <h4 class="font-semibold text-sm truncate">Flowy — AI搭載タスク管理</h4>
-                  </div>
-                  <div class="text-xs text-zinc-500 mt-1 flex items-center gap-3 flex-wrap">
-                    <span>@kenji_dev</span>
-                    <span class="flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i>87/100</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Post 2 -->
-              <div class="px-5 py-3.5 hover:bg-white/[0.02] transition flex items-start gap-3">
-                <div class="flex flex-col items-center pt-0.5 w-7 flex-shrink-0 text-zinc-600 text-[10px] font-mono">
-                  #082
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 font-mono">Web</span>
-                    <h4 class="font-semibold text-sm truncate">家計簿SaaS「ZeniLog」V2</h4>
-                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/20">急募</span>
-                  </div>
-                  <div class="text-xs text-zinc-500 mt-1 flex items-center gap-3 flex-wrap">
-                    <span>@miho_designs</span>
-                    <span class="flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i>42/50</span>
-                    <span class="flex items-center gap-1"><i data-lucide="globe" class="w-3 h-3"></i>大衆オープン</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Post 3 -->
-              <div class="px-5 py-3.5 hover:bg-white/[0.02] transition flex items-start gap-3">
-                <div class="flex flex-col items-center pt-0.5 w-7 flex-shrink-0 text-zinc-600 text-[10px] font-mono">
-                  #081
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/20 font-mono">Android</span>
-                    <h4 class="font-semibold text-sm truncate">記憶定着アプリ「Kioku」β2</h4>
-                  </div>
-                  <div class="text-xs text-zinc-500 mt-1 flex items-center gap-3 flex-wrap">
-                    <span>@nori_dev</span>
-                    <span class="flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i>23/30</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Post 4 -->
-              <div class="px-5 py-3.5 hover:bg-white/[0.02] transition flex items-start gap-3 opacity-60">
-                <div class="flex flex-col items-center pt-0.5 w-7 flex-shrink-0 text-zinc-600 text-[10px] font-mono">
-                  #080
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-500/15 text-zinc-400 border border-zinc-500/20 font-mono">SaaS</span>
-                    <h4 class="font-semibold text-sm truncate">名刺管理ツール「Meets」</h4>
-                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-500/15 text-zinc-400 border border-zinc-500/20">締切</span>
-                  </div>
-                  <div class="text-xs text-zinc-500 mt-1 flex items-center gap-3 flex-wrap">
-                    <span>@ryo_indie</span>
-                    <span class="flex items-center gap-1"><i data-lucide="users" class="w-3 h-3"></i>50/50</span>
-                    <span class="flex items-center gap-1"><i data-lucide="message-circle" class="w-3 h-3"></i>27</span>
-                    <span>3時間前</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Footer -->
-            <div class="px-5 py-3 border-t border-white/5 flex items-center justify-between text-xs">
-              <span class="text-zinc-500">本日 <span class="text-white font-semibold">12</span> 件の新規投稿</span>
-              <span class="grad-text font-medium flex items-center gap-1">もっと見る <i data-lucide="arrow-right" class="w-3 h-3"></i></span>
-            </div>
-          </div>
-        </div>
-        <div class="hidden sm:flex absolute -right-4 bottom-16 items-center gap-2 px-3 py-2 rounded-xl glass border border-white/10 animate-float" style="animation-delay: -4s">
-          <i data-lucide="refresh-cw" class="w-4 h-4 text-purple-400"></i>
-          <span class="text-xs">相互テストでクレジット獲得</span>
-        </div>
-      </div>
+      <span>ベータ期間中は <span class="text-white font-semibold">すべての機能が無料</span></span>
     </div>
   </div>
 </section>
 
-<!-- ============== PROBLEM ============== -->
-<section class="relative z-10 py-20 sm:py-28">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="max-w-2xl">
-      <div class="text-sm font-semibold grad-text mb-3">PROBLEM</div>
-      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
-        X 募集だけだと、<br class="sm:hidden" />限界がある。
-      </h2>
-      <p class="mt-4 text-zinc-400 leading-relaxed">
-        SNS で β テスターを募るのが定番ですが、本当に欲しい「量」と「質」と「学び」が同時に手に入ることは稀です。
-      </p>
-    </div>
+<script>
+// Sparkles
+(function() {
+  const wrap = document.getElementById('sparkleWrap');
+  const colors = ['#00D4FF','#A855F7','#ec4899','#facc15','#34d399'];
+  function spawnSparkle() {
+    const el = document.createElement('div');
+    el.className = 'sparkle-dot';
+    el.style.cssText = `
+      left:${10 + Math.random()*80}%;
+      top:${10 + Math.random()*80}%;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      width:${4+Math.random()*6}px;
+      height:${4+Math.random()*6}px;
+      animation-duration:${1.5+Math.random()*2}s;
+      animation-delay:${Math.random()*2}s;
+      box-shadow:0 0 6px 2px currentColor;
+    `;
+    wrap.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+  setInterval(spawnSparkle, 200);
+  for (let i=0; i<12; i++) spawnSparkle();
+})();
+</script>
 
-    <div class="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="p-6 rounded-2xl bg-ink-800 border border-white/5 hover:border-white/10 transition">
-        <div class="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-4">
-          <!-- lucide: users-x -->
-          <i data-lucide="user-x" class="w-5 h-5 text-red-400"></i>
-        </div>
-        <h3 class="font-semibold mb-2">フォロワーがいないと届かない</h3>
-        <p class="text-sm text-zinc-500 leading-relaxed">影響力勝負になりがちで、駆け出しの個人開発者には不利。</p>
-      </div>
-      <div class="p-6 rounded-2xl bg-ink-800 border border-white/5 hover:border-white/10 transition">
-        <div class="w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center mb-4">
-          <!-- lucide: message-square-off -->
-          <i data-lucide="message-square-off" class="w-5 h-5 text-orange-400"></i>
-        </div>
-        <h3 class="font-semibold mb-2">「いいね」しか返ってこない</h3>
-        <p class="text-sm text-zinc-500 leading-relaxed">深いフィードバックが欲しいのに、お祝いコメントで止まる。</p>
-      </div>
-      <div class="p-6 rounded-2xl bg-ink-800 border border-white/5 hover:border-white/10 transition">
-        <div class="w-10 h-10 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center mb-4">
-          <!-- lucide: shuffle -->
-          <i data-lucide="shuffle" class="w-5 h-5 text-yellow-400"></i>
-        </div>
-        <h3 class="font-semibold mb-2">層が合わない人ばかり</h3>
-        <p class="text-sm text-zinc-500 leading-relaxed">ターゲットじゃない人の応募が増え、検証ノイズだけ膨らむ。</p>
-      </div>
-      <div class="p-6 rounded-2xl bg-ink-800 border border-white/5 hover:border-white/10 transition">
-        <div class="w-10 h-10 rounded-lg bg-pink-500/10 border border-pink-500/20 flex items-center justify-center mb-4">
-          <!-- lucide: book-x -->
-          <i data-lucide="book-x" class="w-5 h-5 text-pink-400"></i>
-        </div>
-        <h3 class="font-semibold mb-2">触っても学びに残らない</h3>
-        <p class="text-sm text-zinc-500 leading-relaxed">他のインディーアプリから UX を盗む機会が、SNS には無い。</p>
-      </div>
-    </div>
-  </div>
-</section>
 
 <!-- ============== SOLUTION ============== -->
 <section class="relative z-10 py-20 sm:py-28 border-t border-white/5">
@@ -463,149 +365,11 @@
 <!-- ============== LIVE BOARD ============== -->
 <section id="board" class="relative z-10 py-20 sm:py-28 border-t border-white/5 scroll-mt-20">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex items-end justify-between flex-wrap gap-4 mb-10">
-      <div>
-        <div class="text-sm font-semibold grad-text mb-3">LIVE BOARD</div>
-        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
-          いま、掲示板で<br class="sm:hidden" />募集中のプロジェクト
-        </h2>
-      </div>
-      <div class="flex items-center gap-3 text-xs">
-        <span class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
-          <span class="relative flex h-1.5 w-1.5">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400"></span>
-          </span>
-          リアルタイム更新
-        </span>
-      </div>
-    </div>
 
-    <div class="grad-border p-1 rounded-2xl">
-      <div class="rounded-2xl bg-ink-800 overflow-hidden">
-        <!-- Tabs / sort bar -->
-        <div class="px-5 py-3 border-b border-white/5 flex items-center justify-between flex-wrap gap-3">
-          <div role="group" aria-label="並び替え" class="flex items-center gap-1 text-xs">
-            <button aria-pressed="true" class="px-3 py-1.5 rounded-md bg-white/10 text-white font-medium">最新</button>
-            <button aria-pressed="false" class="px-3 py-1.5 rounded-md text-zinc-500 hover:text-zinc-300">人気</button>
-            <button aria-pressed="false" class="px-3 py-1.5 rounded-md text-zinc-500 hover:text-zinc-300">急募</button>
-            <button aria-pressed="false" class="px-3 py-1.5 rounded-md text-zinc-500 hover:text-zinc-300">終了間近</button>
-          </div>
-          <div class="flex items-center gap-2 text-xs text-zinc-500">
-            <i data-lucide="search" class="w-3.5 h-3.5"></i>
-            <span class="font-mono">/ 検索</span>
-          </div>
-        </div>
-
-        <!-- Thread rows -->
-        <div class="divide-y divide-white/5 font-sans">
-          <!-- Row -->
-          <a href="#" class="grid grid-cols-12 gap-3 px-5 py-4 hover:bg-white/[0.03] transition items-center">
-            <div class="col-span-1 text-zinc-600 font-mono text-xs hidden sm:block">#087</div>
-            <div class="col-span-12 sm:col-span-7">
-              <div class="flex items-center gap-2 flex-wrap mb-1.5">
-                <span class="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/20 font-mono">iOS</span>
-                <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/20 font-mono">AI</span>
-                <span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-300 border border-rose-500/20">急募</span>
-              </div>
-              <h4 class="font-semibold text-base mb-0.5">写真AI整理アプリ「Snaply」のクローズドβ募集</h4>
-              <p class="text-xs text-zinc-500 line-clamp-1">数千枚の写真を自動分類するAIアプリです。プライバシー設計を検証したく…</p>
-            </div>
-            <div class="col-span-12 sm:col-span-4 flex items-center justify-between sm:justify-end gap-4 text-xs text-zinc-500">
-              <div class="flex items-center gap-1.5"><img src="https://picsum.photos/seed/p1/40" class="w-5 h-5 rounded-full" alt="" /><span>@kenji_dev</span></div>
-              <div class="flex items-center gap-3">
-                <span class="flex items-center gap-1"><i data-lucide="users" class="w-3.5 h-3.5"></i>87</span>
-                <span class="flex items-center gap-1"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i>34</span>
-                <span>2分</span>
-              </div>
-            </div>
-          </a>
-
-          <a href="#" class="grid grid-cols-12 gap-3 px-5 py-4 hover:bg-white/[0.03] transition items-center">
-            <div class="col-span-1 text-zinc-600 font-mono text-xs hidden sm:block">#086</div>
-            <div class="col-span-12 sm:col-span-7">
-              <div class="flex items-center gap-2 flex-wrap mb-1.5">
-                <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 font-mono">Web</span>
-                <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-500/15 text-zinc-300 border border-zinc-500/20 font-mono">SaaS</span>
-              </div>
-              <h4 class="font-semibold text-base mb-0.5">家計簿SaaS「ZeniLog」V2 — レシート読取り精度の検証</h4>
-              <p class="text-xs text-zinc-500 line-clamp-1">毎日のレシート登録の体験を、ベータユーザーで一緒に磨きたいです。</p>
-            </div>
-            <div class="col-span-12 sm:col-span-4 flex items-center justify-between sm:justify-end gap-4 text-xs text-zinc-500">
-              <div class="flex items-center gap-1.5"><img src="https://picsum.photos/seed/p2/40" class="w-5 h-5 rounded-full" alt="" /><span>@miho_designs</span></div>
-              <div class="flex items-center gap-3">
-                <span class="flex items-center gap-1"><i data-lucide="users" class="w-3.5 h-3.5"></i>42</span>
-                <span class="flex items-center gap-1"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i>18</span>
-                <span>14分</span>
-              </div>
-            </div>
-          </a>
-
-          <a href="#" class="grid grid-cols-12 gap-3 px-5 py-4 hover:bg-white/[0.03] transition items-center">
-            <div class="col-span-1 text-zinc-600 font-mono text-xs hidden sm:block">#085</div>
-            <div class="col-span-12 sm:col-span-7">
-              <div class="flex items-center gap-2 flex-wrap mb-1.5">
-                <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/20 font-mono">Android</span>
-              </div>
-              <h4 class="font-semibold text-base mb-0.5">記憶定着アプリ「Kioku」β2リリース、フィードバック募集中</h4>
-              <p class="text-xs text-zinc-500 line-clamp-1">忘却曲線ベースの学習アプリです。SRSの体感を一緒に検証してくれる方を募集します。</p>
-            </div>
-            <div class="col-span-12 sm:col-span-4 flex items-center justify-between sm:justify-end gap-4 text-xs text-zinc-500">
-              <div class="flex items-center gap-1.5"><img src="https://picsum.photos/seed/p3/40" class="w-5 h-5 rounded-full" alt="" /><span>@nori_dev</span></div>
-              <div class="flex items-center gap-3">
-                <span class="flex items-center gap-1"><i data-lucide="users" class="w-3.5 h-3.5"></i>23</span>
-                <span class="flex items-center gap-1"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i>9</span>
-                <span>1時間</span>
-              </div>
-            </div>
-          </a>
-
-          <a href="#" class="grid grid-cols-12 gap-3 px-5 py-4 hover:bg-white/[0.03] transition items-center">
-            <div class="col-span-1 text-zinc-600 font-mono text-xs hidden sm:block">#084</div>
-            <div class="col-span-12 sm:col-span-7">
-              <div class="flex items-center gap-2 flex-wrap mb-1.5">
-                <span class="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/20 font-mono">iOS</span>
-                <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 font-mono">Web</span>
-              </div>
-              <h4 class="font-semibold text-base mb-0.5">音声メモ → 自動議事録「KikiToru」のクローズドβ</h4>
-              <p class="text-xs text-zinc-500 line-clamp-1">録音から要点抽出までを自動化。会議が多い人にこそ触ってほしいです。</p>
-            </div>
-            <div class="col-span-12 sm:col-span-4 flex items-center justify-between sm:justify-end gap-4 text-xs text-zinc-500">
-              <div class="flex items-center gap-1.5"><img src="https://picsum.photos/seed/p4/40" class="w-5 h-5 rounded-full" alt="" /><span>@aki_pm</span></div>
-              <div class="flex items-center gap-3">
-                <span class="flex items-center gap-1"><i data-lucide="users" class="w-3.5 h-3.5"></i>61</span>
-                <span class="flex items-center gap-1"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i>22</span>
-                <span>3時間</span>
-              </div>
-            </div>
-          </a>
-
-          <a href="#" class="grid grid-cols-12 gap-3 px-5 py-4 hover:bg-white/[0.03] transition items-center">
-            <div class="col-span-1 text-zinc-600 font-mono text-xs hidden sm:block">#083</div>
-            <div class="col-span-12 sm:col-span-7">
-              <div class="flex items-center gap-2 flex-wrap mb-1.5">
-                <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-300 border border-purple-500/20 font-mono">AI</span>
-                <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 font-mono">Web</span>
-              </div>
-              <h4 class="font-semibold text-base mb-0.5">プロンプト管理ツール「Promp.it」 — エンジニア向けβ</h4>
-              <p class="text-xs text-zinc-500 line-clamp-1">日常的にLLMを使う方、プロンプトのバージョン管理体験を試してください。</p>
-            </div>
-            <div class="col-span-12 sm:col-span-4 flex items-center justify-between sm:justify-end gap-4 text-xs text-zinc-500">
-              <div class="flex items-center gap-1.5"><img src="https://picsum.photos/seed/p5/40" class="w-5 h-5 rounded-full" alt="" /><span>@yuto_dev</span></div>
-              <div class="flex items-center gap-3">
-                <span class="flex items-center gap-1"><i data-lucide="users" class="w-3.5 h-3.5"></i>108</span>
-                <span class="flex items-center gap-1"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i>41</span>
-                <span>5時間</span>
-              </div>
-            </div>
-          </a>
-        </div>
-
-        <div class="px-5 py-4 border-t border-white/5 flex items-center justify-between text-xs">
-          <span class="text-zinc-500">87 件のうち 5 件を表示中</span>
-          <a href="#cta" class="grad-text font-medium flex items-center gap-1">掲示板をすべて見る <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i></a>
-        </div>
-      </div>
+    <div class="text-center">
+      <a href="board.html" class="inline-flex items-center gap-2 grad-bg text-black font-bold px-8 py-4 rounded-2xl hover:opacity-90 transition glow text-sm">
+        <i data-lucide="layout-list" class="w-4 h-4"></i> 掲示板を見る
+      </a>
     </div>
   </div>
 </section>
@@ -616,9 +380,9 @@
     <div class="max-w-2xl mx-auto text-center">
       <div class="text-sm font-semibold grad-text mb-3">FEATURES</div>
       <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
-        ソロ開発の全工程を、<br />ひとつのプラットフォームで。
+        個人開発の全工程を、<br />ひとつのプラットフォームで。
       </h2>
-      <p class="mt-4 text-zinc-400">募集から配信、フィードバック分析まで。</p>
+      <p class="mt-4 text-zinc-400">募集からフィードバック分析まで。</p>
     </div>
 
     <div class="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -640,14 +404,14 @@
       </div>
       -->
 
-      <!-- ③ 相互テスト＆クレジット制 -->
+      <!-- ③ 相互テスト＆トークン制 -->
       <div class="p-6 rounded-2xl bg-ink-800 border border-white/5 hover:border-cyan-400/30 transition group">
         <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-cyan-500/20 to-cyan-500/5 border border-cyan-500/20 flex items-center justify-center mb-5">
           <!-- lucide: refresh-cw -->
           <i data-lucide="refresh-cw" class="w-5 h-5 text-cyan-400"></i>
         </div>
-        <h3 class="font-semibold text-lg mb-2">相互テスト＆クレジット制</h3>
-        <p class="text-sm text-zinc-400 leading-relaxed">他の人のアプリをテストすると「クレジット」獲得。次は自分の募集が優先表示されます。</p>
+        <h3 class="font-semibold text-lg mb-2">相互テスト＆トークン制</h3>
+        <p class="text-sm text-zinc-400 leading-relaxed">他の人のアプリをテストすると「トークン」獲得。次は自分の募集が優先表示されます。</p>
       </div>
 
       <!-- ④ 学びノート共有 -->
@@ -749,8 +513,8 @@
         <div class="grad-border p-1 rounded-2xl">
           <div class="bg-ink-800 rounded-2xl p-6 h-full">
             <div class="w-12 h-12 rounded-full grad-bg text-black font-bold text-xl flex items-center justify-center mb-5">3</div>
-            <h3 class="font-semibold text-lg mb-2">テスト → 学びノート → クレジット</h3>
-            <p class="text-sm text-zinc-400 leading-relaxed mb-4">受け取った FB で改善。テストした側は学びノートを書いてクレジット獲得。</p>
+            <h3 class="font-semibold text-lg mb-2">テスト → 学びノート → トークン</h3>
+            <p class="text-sm text-zinc-400 leading-relaxed mb-4">受け取った FB で改善。テストした側は学びノートを書いてトークン獲得。</p>
             <div class="space-y-2">
               <div class="flex items-center gap-2 p-2 rounded-md bg-emerald-500/5 border border-emerald-500/10">
                 <i data-lucide="message-circle" class="w-3.5 h-3.5 text-emerald-400"></i>
@@ -762,7 +526,7 @@
               </div>
               <div class="flex items-center gap-2 p-2 rounded-md bg-cyan-500/5 border border-cyan-500/10">
                 <i data-lucide="coins" class="w-3.5 h-3.5 text-cyan-400"></i>
-                <span class="text-xs">+3 クレジット獲得</span>
+                <span class="text-xs">+3 トークン獲得</span>
               </div>
             </div>
           </div>
@@ -778,7 +542,7 @@
     <div class="text-center max-w-2xl mx-auto mb-14">
       <div class="text-sm font-semibold grad-text mb-3">FOR EVERYONE</div>
       <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
-        作る人にも、試す人にも、いいことを。
+        作る人、試す人共に<br />Win-Winで。
       </h2>
     </div>
 
@@ -842,7 +606,7 @@
             <li class="flex items-start gap-3">
               <i data-lucide="check-circle-2" class="w-5 h-5 text-purple-400 mt-0.5 flex-shrink-0"></i>
               <div>
-                <div class="font-medium">テスト = 勉強 = クレジットの三拍子</div>
+                <div class="font-medium">テスト = 勉強 = トークンの三拍子</div>
                 <div class="text-sm text-zinc-400">学びノートを書くと、次は自分のアプリを優先表示。</div>
               </div>
             </li>
@@ -856,82 +620,6 @@
   </div>
 </section>
 
-<!-- ============== TESTIMONIALS ============== -->
-<section class="relative z-10 py-20 sm:py-28 border-t border-white/5">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="max-w-2xl mx-auto text-center mb-14">
-      <div class="text-sm font-semibold grad-text mb-3">TESTIMONIALS</div>
-      <h2 class="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
-        日本のソロ開発者から、<br />たくさんの声。
-      </h2>
-    </div>
-
-    <div class="grid md:grid-cols-3 gap-4">
-      <!-- Testimonial 1 -->
-      <div class="p-6 rounded-2xl bg-ink-800 border border-white/5">
-        <div class="flex gap-1 mb-4">
-          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
-          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
-          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
-          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
-          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
-        </div>
-        <p class="text-zinc-300 leading-relaxed mb-6">
-          「「テストしたらクレジット」の仕組みが面白い。他人のアプリを触るのが勉強になって、自分のアプリのテスターも加速的に集まる。一石二鳥。」
-        </p>
-        <div class="flex items-center gap-3">
-          <img src="https://picsum.photos/seed/test1/80" class="w-10 h-10 rounded-full" alt="" />
-          <div>
-            <div class="font-semibold text-sm">佐藤 健太</div>
-            <div class="text-xs text-zinc-500">メモアプリ "Inku" 作者</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Testimonial 2 -->
-      <div class="p-6 rounded-2xl bg-ink-800 border border-white/5">
-        <div class="flex gap-1 mb-4">
-          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
-          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
-          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
-          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
-          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
-        </div>
-        <p class="text-zinc-300 leading-relaxed mb-6">
-          「学びノートの文化が本当にいい。試してもらう → 改善、だけじゃなくて、「他人のアプリで勉強 → 自分に反映」のループがようやく高速で回る。」
-        </p>
-        <div class="flex items-center gap-3">
-          <img src="https://picsum.photos/seed/test2/80" class="w-10 h-10 rounded-full" alt="" />
-          <div>
-            <div class="font-semibold text-sm">三浦 美穂</div>
-            <div class="text-xs text-zinc-500">家計簿アプリ "ZeniLog" 作者</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Testimonial 3 -->
-      <div class="p-6 rounded-2xl bg-ink-800 border border-white/5">
-        <div class="flex gap-1 mb-4">
-          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
-          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
-          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
-          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
-          <i data-lucide="star" class="w-4 h-4 text-yellow-400 fill-yellow-400"></i>
-        </div>
-        <p class="text-zinc-300 leading-relaxed mb-6">
-          「マッチングで出会った個人開発者と、その後もお互いのアプリをテストし合う仲に。コミュニティが本当に良きテスト仲間になった。」
-        </p>
-        <div class="flex items-center gap-3">
-          <img src="https://picsum.photos/seed/test3/80" class="w-10 h-10 rounded-full" alt="" />
-          <div>
-            <div class="font-semibold text-sm">山田 涼介</div>
-            <div class="text-xs text-zinc-500">学習管理SaaS "Kioku" 創業者</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
 
 <!-- ============== FAQ ============== -->
 <section id="faq" class="relative z-10 py-20 sm:py-28 border-t border-white/5 scroll-mt-20">
@@ -950,7 +638,7 @@
           <i data-lucide="chevron-down" class="w-5 h-5 text-zinc-500 chev"></i>
         </summary>
         <p class="mt-4 text-sm text-zinc-400 leading-relaxed">
-          はい、ベータ版公開期間中はすべての機能を完全無料でご利用いただけます。クレジットカード登録も不要です。将来的に有料プランを導入する場合も、ベータ期間中にご利用いただいた方には特典をご用意します。
+          はい、ベータ版公開期間中はすべての機能を完全無料でご利用いただけます。トークンカード登録も不要です。将来的に有料プランを導入する場合も、ベータ期間中にご利用いただいた方には特典をご用意します。
         </p>
       </details>
       <details class="group p-5 rounded-xl bg-ink-800 border border-white/5 hover:border-white/10 transition">
@@ -973,11 +661,11 @@
       </details>
       <details class="group p-5 rounded-xl bg-ink-800 border border-white/5 hover:border-white/10 transition">
         <summary class="flex items-center justify-between cursor-pointer font-medium list-none">
-          <span>クレジット制ってどういう仕組み？</span>
+          <span>トークン制ってどういう仕組み？</span>
           <i data-lucide="chevron-down" class="w-5 h-5 text-zinc-500 chev"></i>
         </summary>
         <p class="mt-4 text-sm text-zinc-400 leading-relaxed">
-          他の人のアプリをテストし、学びノートを投稿するとクレジットが貯まります。自分の募集を出すときにクレジットを使うと優先表示されたり、マッチング枠の開放数が増えたりします。「ギブ」する人が報われる設計です。
+          他の人のアプリをテストし、学びノートを投稿するとトークンが貯まります。自分の募集を出すときにトークンを使うと優先表示されたり、マッチング枠の開放数が増えたりします。「ギブ」する人が報われる設計です。
         </p>
       </details>
       <details class="group p-5 rounded-xl bg-ink-800 border border-white/5 hover:border-white/10 transition">
@@ -995,7 +683,7 @@
           <i data-lucide="chevron-down" class="w-5 h-5 text-zinc-500 chev"></i>
         </summary>
         <p class="mt-4 text-sm text-zinc-400 leading-relaxed">
-          もちろんです。「インスピレーション閲覧」では募集中のアプリを見学できます。気に入ったらテストに参加 → 学びノート投稿でクレジットが貯まり、いずれ自分の作品を出すときに役立ちます。
+          もちろんです。「インスピレーション閲覧」では募集中のアプリを見学できます。気に入ったらテストに参加 → 学びノート投稿でトークンが貯まり、いずれ自分の作品を出すときに役立ちます。
         </p>
       </details>
     </div>
@@ -1017,7 +705,7 @@
     </h2>
     <p class="mt-6 text-zinc-400 max-w-xl mx-auto leading-relaxed">
       作る人も、試す人も、ベータ期間中はすべての機能が完全無料。<br class="hidden sm:inline" />
-      クレジットカード不要・3 分で登録。今夜、あなたのプロジェクトが動き出します。
+      トークンカード不要・3 分で登録。今夜、あなたのプロジェクトが動き出します。
     </p>
     <div class="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
       <button data-login data-login-dest="post.html" class="grad-bg text-black font-semibold px-6 py-3.5 rounded-xl hover:opacity-90 transition flex items-center justify-center gap-2 glow">
@@ -1060,12 +748,12 @@
       </button>
     </div>
 
-    <!-- 通知 -->
-    <button data-login data-login-dest="mypage.html"
-            class="bn-item flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
-      <i data-lucide="bell" class="w-5 h-5" aria-hidden="true"></i>
-      <span class="text-[10px] font-medium">通知</span>
-    </button>
+    <!-- 参加中 -->
+    <a href="joined.html"
+       class="bn-item flex-1 flex flex-col items-center justify-center gap-0.5 text-zinc-400 hover:text-white transition pt-1">
+      <i data-lucide="list-checks" class="w-5 h-5" aria-hidden="true"></i>
+      <span class="text-[10px] font-medium">参加中</span>
+    </a>
 
     <!-- マイページ -->
     <a href="mypage.html"
