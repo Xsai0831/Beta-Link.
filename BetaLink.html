@@ -248,6 +248,13 @@
         <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-400"></span>
       </span>
       ベータ版公開中 · 現在完全無料
+      <span class="border-l border-white/15 pl-2 flex items-center gap-1.5">
+        <span class="relative flex h-1.5 w-1.5">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400"></span>
+        </span>
+        <span id="onlineCount">—</span> 人オンライン
+      </span>
     </div>
   </div>
 
@@ -1072,6 +1079,19 @@
     }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
 
     document.querySelectorAll('.sr').forEach(el => obs.observe(el));
+  })();
+
+  // ============ Online Presence ============
+  (function() {
+    const channel = sb.channel('online', { config: { presence: { key: Math.random().toString(36).slice(2) } } });
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const count = Object.keys(channel.presenceState()).length;
+        document.getElementById('onlineCount').textContent = count;
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') await channel.track({ t: Date.now() });
+      });
   })();
 </script>
 </body>
