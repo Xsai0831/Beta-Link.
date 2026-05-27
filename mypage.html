@@ -239,6 +239,20 @@
       </div>
     </div>
 
+    <!-- Admin user list (管理者のみ) -->
+    <div id="adminUserSection" class="hidden mt-8">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-semibold flex items-center gap-2">
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border border-yellow-400/50 text-yellow-300 bg-yellow-400/10">管理者</span>
+          ユーザー一覧
+        </h2>
+        <span id="userTotalCount" class="text-xs text-zinc-500"></span>
+      </div>
+      <div id="adminUserList" class="rounded-2xl bg-ink-800 border border-yellow-400/10 overflow-hidden divide-y divide-white/5">
+        <div class="px-5 py-4 text-center text-zinc-600 text-xs animate-pulse">読み込み中…</div>
+      </div>
+    </div>
+
     <!-- Admin log (管理者のみ) -->
     <div id="adminSection" class="hidden mt-8">
       <div class="flex items-center justify-between mb-4">
@@ -327,7 +341,9 @@ function esc(str) {
     badge.textContent = '管理者';
     document.getElementById('userNameEl').after(badge);
     document.getElementById('adminSection').classList.remove('hidden');
+    document.getElementById('adminUserSection').classList.remove('hidden');
     loadAdminLog();
+    loadAdminUsers();
   }
 
   // ログアウト
@@ -415,6 +431,54 @@ function esc(str) {
       </div>`).join('');
   }
 })();
+
+async function loadAdminUsers() {
+  const el = document.getElementById('adminUserList');
+
+  const [{ data: profiles }, { data: projects }, { data: tests }] = await Promise.all([
+    sb.from('profiles').select('id, username, credits, created_at').order('created_at', { ascending: false }),
+    sb.from('projects').select('user_id'),
+    sb.from('test_history').select('tester_id'),
+  ]);
+
+  if (!profiles?.length) {
+    el.innerHTML = '<div class="px-5 py-6 text-center text-zinc-600 text-xs">ユーザーがいません</div>';
+    return;
+  }
+
+  const postCount  = {};
+  const testCount  = {};
+  (projects || []).forEach(p => { postCount[p.user_id]  = (postCount[p.user_id]  || 0) + 1; });
+  (tests    || []).forEach(t => { testCount[t.tester_id] = (testCount[t.tester_id] || 0) + 1; });
+
+  document.getElementById('userTotalCount').textContent = `${profiles.length} 人`;
+
+  el.innerHTML = `
+    <div class="grid grid-cols-12 gap-2 px-4 py-2 text-[10px] text-zinc-600 font-semibold uppercase tracking-wider border-b border-white/5">
+      <div class="col-span-4">ユーザー</div>
+      <div class="col-span-2 text-center">投稿</div>
+      <div class="col-span-2 text-center">テスト</div>
+      <div class="col-span-2 text-center">累計</div>
+      <div class="col-span-2 text-center">トークン</div>
+    </div>
+    ${profiles.map(p => {
+      const posted = postCount[p.id] || 0;
+      const tested = testCount[p.id] || 0;
+      const total  = posted + tested;
+      const joined = new Date(p.created_at).toLocaleDateString('ja-JP', { month:'numeric', day:'numeric' });
+      return `
+        <div class="grid grid-cols-12 gap-2 px-4 py-3 hover:bg-white/[0.02] transition items-center">
+          <div class="col-span-4">
+            <div class="text-xs font-medium text-zinc-200">@${esc(p.username || '不明')}</div>
+            <div class="text-[10px] text-zinc-600">${joined}登録</div>
+          </div>
+          <div class="col-span-2 text-center text-xs text-cyan-400">${posted}</div>
+          <div class="col-span-2 text-center text-xs text-purple-400">${tested}</div>
+          <div class="col-span-2 text-center text-xs font-bold text-white">${total}</div>
+          <div class="col-span-2 text-center text-xs text-emerald-400">${p.credits}</div>
+        </div>`;
+    }).join('')}`;
+}
 
 const ACTION_LABEL = {
   post_project:    { text: 'プロジェクトを投稿', color: 'text-cyan-400',    icon: 'upload' },
