@@ -344,6 +344,12 @@ function esc(str) {
     document.getElementById('adminUserSection').classList.remove('hidden');
     loadAdminLog();
     loadAdminUsers();
+    // 新規ユーザー登録をリアルタイムで検知
+    sb.channel('profiles-changes')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'profiles' }, () => {
+        loadAdminUsers();
+      })
+      .subscribe();
   }
 
   // ログアウト
