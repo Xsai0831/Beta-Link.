@@ -239,6 +239,22 @@
       </div>
     </div>
 
+    <!-- Admin log (管理者のみ) -->
+    <div id="adminSection" class="hidden mt-8">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-semibold flex items-center gap-2">
+          <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border border-yellow-400/50 text-yellow-300 bg-yellow-400/10">管理者</span>
+          アクティビティログ
+        </h2>
+        <button onclick="loadAdminLog()" class="text-xs text-zinc-400 hover:text-white border border-white/10 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+          <i data-lucide="refresh-cw" class="w-3 h-3"></i> 更新
+        </button>
+      </div>
+      <div id="adminLogList" class="rounded-2xl bg-ink-800 border border-yellow-400/10 overflow-hidden divide-y divide-white/5">
+        <div class="px-5 py-4 text-center text-zinc-600 text-xs animate-pulse">読み込み中…</div>
+      </div>
+    </div>
+
   </div>
 
 </main>
@@ -310,6 +326,8 @@ function esc(str) {
     badge.className = 'text-[10px] font-bold px-1.5 py-0.5 rounded border border-yellow-400/50 text-yellow-300 bg-yellow-400/10';
     badge.textContent = '管理者';
     document.getElementById('userNameEl').after(badge);
+    document.getElementById('adminSection').classList.remove('hidden');
+    loadAdminLog();
   }
 
   // ログアウト
@@ -397,6 +415,35 @@ function esc(str) {
       </div>`).join('');
   }
 })();
+
+const ACTION_LABEL = {
+  post_project:    { text: 'プロジェクトを投稿', color: 'text-cyan-400',    icon: 'upload' },
+  join_project:    { text: 'プロジェクトに参加', color: 'text-purple-400',  icon: 'rocket' },
+  submit_feedback: { text: 'フィードバックを送信', color: 'text-emerald-400', icon: 'message-square' },
+};
+
+async function loadAdminLog() {
+  const el = document.getElementById('adminLogList');
+  el.innerHTML = '<div class="px-5 py-4 text-center text-zinc-600 text-xs animate-pulse">読み込み中…</div>';
+  const { data, error } = await sb.rpc('get_activity_logs');
+  if (error || !data?.length) {
+    el.innerHTML = '<div class="px-5 py-6 text-center text-zinc-600 text-xs">ログがありません</div>';
+    return;
+  }
+  el.innerHTML = data.map(log => {
+    const a = ACTION_LABEL[log.action] || { text: log.action, color: 'text-zinc-400', icon: 'activity' };
+    const dt = new Date(log.created_at);
+    const dateStr = `${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    return `
+      <div class="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.02] transition">
+        <span class="text-[11px] text-zinc-500 font-mono w-16 flex-shrink-0">${dateStr}</span>
+        <span class="text-zinc-300 text-xs font-medium w-28 flex-shrink-0">@${esc(log.username)}</span>
+        <span class="text-xs ${a.color} flex-shrink-0">${a.text}</span>
+        <span class="text-xs text-zinc-500 truncate">${esc(log.detail || '')}</span>
+      </div>`;
+  }).join('');
+  lucide.createIcons();
+}
 
 function showWelcomeModal() {
   const modal = document.getElementById('welcomeModal');
