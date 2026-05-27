@@ -426,7 +426,11 @@ async function loadAdminLog() {
   const el = document.getElementById('adminLogList');
   el.innerHTML = '<div class="px-5 py-4 text-center text-zinc-600 text-xs animate-pulse">読み込み中…</div>';
   const { data, error } = await sb.rpc('get_activity_logs');
-  if (error || !data?.length) {
+  if (error) {
+    el.innerHTML = `<div class="px-5 py-6 text-center text-red-400 text-xs">エラー: ${error.message}</div>`;
+    return;
+  }
+  if (!data?.length) {
     el.innerHTML = '<div class="px-5 py-6 text-center text-zinc-600 text-xs">ログがありません</div>';
     return;
   }
